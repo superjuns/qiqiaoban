@@ -815,7 +815,7 @@
         // ---------- API 地址 ----------
         const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";                // 作品提交接口
         const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";        // 画展数据接口
-        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口（获取所有白名单用户）
+        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口
         
         // ---------- 轮廓库 (完整27种) ----------
         const fullMasterShapes = [
@@ -889,6 +889,7 @@
         let audioChunks = [];
         let recordedAudioBlob = null;
         let isRecording = false;
+        let currentStream = null;
         
         // 隐藏/显示侧边栏
         function toggleSidebar() {
@@ -973,53 +974,115 @@
         });
         initSpeechRecognition();
         
-        // 录音功能
+        // 录音功能（修复版）
         async function startRecording() {
-            if (isRecording) return;
+            if (isRecording) {
+                audioStatus.innerText = '⚠️ 正在录音中，请先停止';
+                return;
+            }
+            // 重置状态
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                try { mediaRecorder.stop(); } catch(e) {}
+            }
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            audioChunks = [];
+            recordedAudioBlob = null;
+            audioPlayerContainer.style.display = 'none';
+            audioPlayer.src = '';
+            
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                currentStream = stream;
                 mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) audioChunks.push(event.data);
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data && event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
                 };
                 mediaRecorder.onstop = () => {
+                    if (audioChunks.length === 0) {
+                        audioStatus.innerText = '❌ 录音失败，未捕获到音频数据';
+                        isRecording = false;
+                        startRecordBtn.disabled = false;
+                        stopRecordBtn.disabled = true;
+                        startRecordBtn.classList.remove('recording');
+                        if (currentStream) {
+                            currentStream.getTracks().forEach(track => track.stop());
+                            currentStream = null;
+                        }
+                        return;
+                    }
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     recordedAudioBlob = audioBlob;
                     const audioUrl = URL.createObjectURL(audioBlob);
                     audioPlayer.src = audioUrl;
                     audioPlayerContainer.style.display = 'block';
                     audioStatus.innerText = '✅ 录音完成，可预览。最长60秒。';
-                    if (mediaRecorder.stream) {
-                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
-                    }
                     isRecording = false;
                     startRecordBtn.disabled = false;
                     stopRecordBtn.disabled = true;
+                    startRecordBtn.classList.remove('recording');
+                    if (currentStream) {
+                        currentStream.getTracks().forEach(track => track.stop());
+                        currentStream = null;
+                    }
                 };
-                mediaRecorder.start();
+                mediaRecorder.onerror = (err) => {
+                    console.error('MediaRecorder错误:', err);
+                    audioStatus.innerText = '❌ 录音出错，请重试';
+                    isRecording = false;
+                    startRecordBtn.disabled = false;
+                    stopRecordBtn.disabled = true;
+                    startRecordBtn.classList.remove('recording');
+                    if (currentStream) {
+                        currentStream.getTracks().forEach(track => track.stop());
+                        currentStream = null;
+                    }
+                };
+                // 开始录音，并设置 timeslice 每1000ms收集一次数据（防止长时间无数据）
+                mediaRecorder.start(1000);
                 isRecording = true;
                 startRecordBtn.disabled = true;
                 stopRecordBtn.disabled = false;
                 startRecordBtn.classList.add('recording');
                 audioStatus.innerText = '🔴 录音中... 最长60秒';
+                // 60秒自动停止
                 setTimeout(() => {
-                    if (isRecording) {
+                    if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
                         stopRecording();
                     }
                 }, 60000);
             } catch (err) {
-                console.error('录音启动失败', err);
-                audioStatus.innerText = '❌ 无法录音，请检查麦克风权限';
+                console.error('录音启动失败:', err);
+                let errorMsg = '❌ 无法录音，请检查麦克风权限';
+                if (err.name === 'NotAllowedError') errorMsg = '❌ 未获得麦克风权限，请允许后重试';
+                else if (err.name === 'NotFoundError') errorMsg = '❌ 未找到麦克风设备';
+                audioStatus.innerText = errorMsg;
                 startRecordBtn.disabled = false;
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                    currentStream = null;
+                }
             }
         }
+        
         function stopRecording() {
-            if (mediaRecorder && isRecording) {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
+                // 注意：onstop 事件会异步处理 audioChunks
+                audioStatus.innerText = '⏹️ 正在处理录音...';
+            } else {
+                audioStatus.innerText = '没有正在进行的录音';
+                startRecordBtn.disabled = false;
+                stopRecordBtn.disabled = true;
                 startRecordBtn.classList.remove('recording');
+                isRecording = false;
             }
         }
+        
         startRecordBtn.addEventListener('click', startRecording);
         stopRecordBtn.addEventListener('click', stopRecording);
         
@@ -1069,33 +1132,24 @@
         previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
         previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
         
-        // ----- 白名单验证函数（调用 /all 接口获取所有白名单用户，在前端核对）-----
-        let whitelistCache = null;  // 缓存白名单数据，避免重复请求
-        
+        // 白名单验证
+        let whitelistCache = null;
         async function checkWhitelist(className, studentName) {
             try {
-                // 如果已有缓存则直接使用
                 if (!whitelistCache) {
                     const response = await fetch(WHITELIST_ALL_API);
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
-                    // 根据接口返回结构，白名单数据在 submissions 数组中
                     whitelistCache = data.submissions || data.data || [];
                     if (!Array.isArray(whitelistCache)) whitelistCache = [];
                 }
-                
-                // 在白名单中查找匹配项（班级和姓名均需匹配）
                 const matched = whitelistCache.some(entry => {
                     const entryClass = entry.class || entry.className || '';
                     const entryName = entry.name || entry.studentName || '';
                     return entryClass === className && entryName === studentName;
                 });
-                
-                if (matched) {
-                    return { allowed: true, message: '验证通过' };
-                } else {
-                    return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
-                }
+                if (matched) return { allowed: true, message: '验证通过' };
+                else return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
             } catch (err) {
                 console.error('白名单验证失败:', err);
                 return { allowed: false, message: '白名单验证服务异常，请稍后重试' };
@@ -1211,7 +1265,7 @@
             return canvas.toDataURL("image/png");
         }
         
-        // 提交作品（白名单验证 + 截图 + 录音文件）
+        // 提交作品
         async function submitWork(){
             submitModal.style.display='flex'; submitStatus.style.display='none'; 
             studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
@@ -1221,7 +1275,8 @@
             audioStatus.innerText = '录音最长60秒，完成后可预览';
             startRecordBtn.disabled = false;
             stopRecordBtn.disabled = true;
-            if (mediaRecorder && isRecording) stopRecording();
+            if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
+            if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
             
             const confirmHandler = async () => {
                 const className = classSelect.value;
@@ -1233,8 +1288,6 @@
                 
                 submitStatus.style.display = 'block';
                 submitStatus.innerText = '🔍 正在验证身份...';
-                
-                // 白名单验证
                 const whitelistResult = await checkWhitelist(className, name);
                 if (!whitelistResult.allowed) {
                     submitStatus.innerText = whitelistResult.message;
