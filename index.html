@@ -812,10 +812,10 @@
 </div>
 <script>
     (function(){
-        // ---------- API 地址 ----------
-        const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";                // 作品提交接口
-        const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";        // 画展数据接口
-        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口
+        // ---------- API 地址 (已全部更新至新地址) ----------
+        const QUICKFORM_API = "https://quickform.cn/api/khqye61vvi";                // 作品提交接口
+        const QUICKFORM_ALL_API = "https://quickform.cn/api/khqye61vvi/all";        // 画展数据接口
+        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口（保持不变）
         
         // ---------- 轮廓库 (完整27种) ----------
         const fullMasterShapes = [
@@ -884,7 +884,7 @@
         const SNAP_THRESHOLD = 24, INIT_POS = { x: 0, y: 150 };
         let isSidebarHidden = false;
         
-        // 录音相关变量
+        // 录音相关变量（修复版）
         let mediaRecorder = null;
         let audioChunks = [];
         let recordedAudioBlob = null;
@@ -974,6 +974,17 @@
         });
         initSpeechRecognition();
         
+        // 获取支持的音频 MIME 类型
+        function getSupportedMimeType() {
+            const types = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
+            for (let type of types) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    return type;
+                }
+            }
+            return '';
+        }
+        
         // 录音功能（修复版）
         async function startRecording() {
             if (isRecording) {
@@ -996,7 +1007,9 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 currentStream = stream;
-                mediaRecorder = new MediaRecorder(stream);
+                const mimeType = getSupportedMimeType();
+                const options = mimeType ? { mimeType: mimeType } : {};
+                mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = (event) => {
                     if (event.data && event.data.size > 0) {
                         audioChunks.push(event.data);
@@ -1004,7 +1017,7 @@
                 };
                 mediaRecorder.onstop = () => {
                     if (audioChunks.length === 0) {
-                        audioStatus.innerText = '❌ 录音失败，未捕获到音频数据';
+                        audioStatus.innerText = '❌ 录音失败，未捕获到音频数据。请检查麦克风并重试。';
                         isRecording = false;
                         startRecordBtn.disabled = false;
                         stopRecordBtn.disabled = true;
@@ -1015,7 +1028,8 @@
                         }
                         return;
                     }
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const blobType = mimeType || 'audio/webm';
+                    const audioBlob = new Blob(audioChunks, { type: blobType });
                     recordedAudioBlob = audioBlob;
                     const audioUrl = URL.createObjectURL(audioBlob);
                     audioPlayer.src = audioUrl;
@@ -1042,8 +1056,7 @@
                         currentStream = null;
                     }
                 };
-                // 开始录音，并设置 timeslice 每1000ms收集一次数据（防止长时间无数据）
-                mediaRecorder.start(1000);
+                mediaRecorder.start(); // 不传 timeslice，一次停止时获取所有数据
                 isRecording = true;
                 startRecordBtn.disabled = true;
                 stopRecordBtn.disabled = false;
@@ -1072,7 +1085,6 @@
         function stopRecording() {
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
-                // 注意：onstop 事件会异步处理 audioChunks
                 audioStatus.innerText = '⏹️ 正在处理录音...';
             } else {
                 audioStatus.innerText = '没有正在进行的录音';
@@ -1086,49 +1098,78 @@
         startRecordBtn.addEventListener('click', startRecording);
         stopRecordBtn.addEventListener('click', stopRecording);
         
-        // 加载画展
+        // ---------- 画展数据加载 (适配新接口) ----------
         async function loadExhibitionData(){
-            exhibitionLoading.style.display='flex'; exhibitionGrid.style.display='none'; exhibitionEmpty.style.display='none';
+            exhibitionLoading.style.display='flex'; 
+            exhibitionGrid.style.display='none'; 
+            exhibitionEmpty.style.display='none';
             try{
-                const resp=await fetch(QUICKFORM_ALL_API); if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
-                const data=await resp.json(); let subs=[];
-                if(Array.isArray(data)) subs=data;
-                else if(data&&Array.isArray(data.data)) subs=data.data;
-                else if(data&&Array.isArray(data.submissions)) subs=data.submissions;
-                else if(data&&data.records) subs=data.records;
-                else subs=[];
-                if(subs.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; return; }
-                subs.sort((a,b)=>(b.createdAt||b.timestamp||0)-(a.createdAt||a.timestamp||0));
-                exhibitionLoading.style.display='none'; exhibitionGrid.style.display='inline-flex'; exhibitionGrid.innerHTML='';
-                subs.forEach(item=>{
-                    let imgUrl=item.image||item.screenshot||item.img||item.picture||(item.data&&item.data.image);
-                    if(!imgUrl&&item.base64&&item.base64.startsWith('data:image')) imgUrl=item.base64;
-                    if(!imgUrl) return;
+                const resp = await fetch(QUICKFORM_ALL_API);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                // 适配新接口的数据结构：新增的 submissions 字段
+                let submissions = data.submissions || [];
+                if (!Array.isArray(submissions)) {
+                    submissions = [];
+                }
+                if (submissions.length === 0) {
+                    exhibitionLoading.style.display='none';
+                    exhibitionEmpty.style.display='block';
+                    return;
+                }
+                // 按创建时间倒序排列
+                submissions.sort((a,b) => (b.createdAt || b.timestamp || 0) - (a.createdAt || a.timestamp || 0));
+                exhibitionLoading.style.display='none';
+                exhibitionGrid.style.display='inline-flex';
+                exhibitionGrid.innerHTML = '';
+                submissions.forEach(item => {
+                    let imgUrl = item.image || item.screenshot || item.img || item.picture || (item.data && item.data.image);
+                    if (!imgUrl && item.base64 && item.base64.startsWith('data:image')) imgUrl = item.base64;
+                    if (!imgUrl) return;
                     const className = item.class || item.className || '未知班级';
                     const authorName = item.name || item.studentName || '匿名';
                     const workTitle = item.workName || '无标题';
                     const story = item.story || '';
                     const storyPreview = story.length > 40 ? story.substring(0,40)+'…' : story;
-                    const div=document.createElement('div'); div.className='exhibition-item';
-                    const imgDiv=document.createElement('div'); imgDiv.className='exhibition-img';
-                    const img=document.createElement('img'); img.src=imgUrl;
-                    img.alt=workTitle;
+                    const div = document.createElement('div'); 
+                    div.className = 'exhibition-item';
+                    const imgDiv = document.createElement('div'); 
+                    imgDiv.className = 'exhibition-img';
+                    const img = document.createElement('img'); 
+                    img.src = imgUrl;
+                    img.alt = workTitle;
                     imgDiv.appendChild(img);
-                    const infoDiv=document.createElement('div'); infoDiv.className='exhibition-info';
-                    infoDiv.innerHTML=`<div class="class-name">${escapeHtml(className)}</div><div>${escapeHtml(authorName)}</div><div class="work-title">《${escapeHtml(workTitle)}》</div>${storyPreview ? `<div class="story-preview">📖 ${escapeHtml(storyPreview)}</div>` : ''}`;
+                    const infoDiv = document.createElement('div'); 
+                    infoDiv.className = 'exhibition-info';
+                    infoDiv.innerHTML = `<div class="class-name">${escapeHtml(className)}</div><div>${escapeHtml(authorName)}</div><div class="work-title">《${escapeHtml(workTitle)}》</div>${storyPreview ? `<div class="story-preview">📖 ${escapeHtml(storyPreview)}</div>` : ''}`;
                     div.appendChild(imgDiv);
                     div.appendChild(infoDiv);
-                    div.addEventListener('click',()=>{
-                        previewImage.src=imgUrl;
+                    div.addEventListener('click', () => {
+                        previewImage.src = imgUrl;
                         previewStory.innerHTML = `<strong>📖 作品故事</strong><br>${escapeHtml(story) || '暂无故事描述'}`;
-                        previewModal.style.display='flex';
+                        previewModal.style.display = 'flex';
                     });
                     exhibitionGrid.appendChild(div);
                 });
-                if(exhibitionGrid.children.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
-            }catch(err){ console.error(err); exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
+                if (exhibitionGrid.children.length === 0) {
+                    exhibitionLoading.style.display = 'none';
+                    exhibitionEmpty.style.display = 'block';
+                }
+            } catch(err) { 
+                console.error('加载画展失败:', err); 
+                exhibitionLoading.style.display = 'none'; 
+                exhibitionEmpty.style.display = 'block'; 
+            }
         }
-        function escapeHtml(str){ return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+        
+        function escapeHtml(str){ 
+            return String(str).replace(/[&<>]/g, function(m){
+                if(m==='&') return '&amp;'; 
+                if(m==='<') return '&lt;'; 
+                if(m==='>') return '&gt;'; 
+                return m;
+            }); 
+        }
         previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
         previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
         
@@ -1265,7 +1306,7 @@
             return canvas.toDataURL("image/png");
         }
         
-        // 提交作品
+        // 提交作品 (白名单验证 + 截图 + 录音文件，适配新接口)
         async function submitWork(){
             submitModal.style.display='flex'; submitStatus.style.display='none'; 
             studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
@@ -1313,6 +1354,7 @@
                     formData.append('audio', recordedAudioBlob, 'story.webm');
                 }
                 try {
+                    // 使用新的提交接口
                     const resp = await fetch(QUICKFORM_API, { method: 'POST', body: formData });
                     if (resp.ok) {
                         submitStatus.innerText = '✅ 作品提交成功！老师将很快看到你的拼图。';
@@ -1321,7 +1363,7 @@
                         recordedAudioBlob = null;
                         audioPlayerContainer.style.display = 'none';
                         audioPlayer.src = '';
-                        loadExhibitionData();
+                        loadExhibitionData(); // 重新加载画展
                     } else {
                         const errText = await resp.text();
                         console.error('提交失败', errText);
