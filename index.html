@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>七巧板 · 灵韵工坊 | 故事画展</title>
+    <title>七巧板 · 灵韵工坊 | 白名单验证</title>
     <style>
         * {
             margin: 0;
@@ -25,6 +25,7 @@
             width: 100%;
             height: 100%;
             flex-direction: row;
+            transition: all 0.3s ease;
         }
         .canvas-area {
             flex: 1;
@@ -36,7 +37,7 @@
             touch-action: none;
         }
         .sidebar {
-            width: 340px;
+            width: 320px;
             background: #FFFFFF;
             display: flex;
             flex-direction: column;
@@ -44,6 +45,39 @@
             box-shadow: -4px 0 20px rgba(0,0,0,0.03);
             z-index: 10;
             overflow-y: auto;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        @media (max-width: 768px) {
+            .app {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                max-height: 48%;
+                border-left: none;
+                border-top: 1px solid #E2E8E6;
+                box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+                order: 2;
+                transition: max-height 0.3s ease, opacity 0.3s ease;
+            }
+            .canvas-area {
+                order: 1;
+                min-height: 52%;
+            }
+            .sidebar.hide {
+                max-height: 0;
+                opacity: 0;
+                overflow: hidden;
+                padding: 0;
+                border-top: none;
+            }
+        }
+        .sidebar.hide {
+            width: 0;
+            opacity: 0;
+            overflow: hidden;
+            padding: 0;
+            border-left: none;
         }
         .sidebar-header {
             padding: 16px 16px 10px;
@@ -235,6 +269,44 @@
             width: 100%;
             margin-top: 8px;
         }
+        .top-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 10px;
+            z-index: 30;
+            background: rgba(255,255,245,0.8);
+            backdrop-filter: blur(8px);
+            padding: 6px 12px;
+            border-radius: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .top-btn {
+            background: white;
+            border: none;
+            border-radius: 30px;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #2C5A45;
+            transition: 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .top-btn:active {
+            transform: scale(0.96);
+            background: #FF8C42;
+            color: white;
+        }
+        .top-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
         .float-controls {
             position: absolute;
             bottom: 16px;
@@ -418,7 +490,6 @@
             stroke-dasharray: 8 5;
             filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
         }
-        /* 语音按钮样式 */
         .voice-btn {
             background: #EFF2EF;
             border: none;
@@ -468,9 +539,9 @@
             text-align: left;
         }
         @media (max-width: 768px) {
-            .app { flex-direction: column; }
-            .sidebar { width: 100%; max-height: 50%; border-left: none; border-top: 1px solid #E2E8E6; order: 2; }
-            .canvas-area { order: 1; min-height: 50%; }
+            .sidebar {
+                max-height: 48%;
+            }
             .exhibition-item { width: 140px; }
             .exhibition-info { font-size: 9px; padding: 6px 8px; }
             .story-textarea { font-size: 12px; padding: 8px 12px; }
@@ -482,6 +553,15 @@
             .zoom-btn { width: 38px; height: 38px; font-size: 20px; }
             .zoom-info { right: 12px; bottom: 38px; font-size: 10px; }
             .label { font-size: 18px; }
+            .top-controls {
+                top: 8px;
+                right: 8px;
+                padding: 4px 10px;
+            }
+            .top-btn {
+                padding: 4px 10px;
+                font-size: 12px;
+            }
         }
         @media (max-width: 480px) {
             .exhibition-item { width: 120px; }
@@ -495,6 +575,12 @@
 <body>
 <div class="app">
     <div class="canvas-area" id="canvasArea">
+        <div class="top-controls">
+            <button id="toggleSidebarBtn" class="top-btn" title="隐藏/显示侧边栏">
+                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5h4v14h-4V5zM5 5h8v14H5V5z"/></svg>
+                隐藏侧边栏
+            </button>
+        </div>
         <svg id="mainSvg" viewBox="0 0 1200 800" style="touch-action: none;">
             <g id="viewportGroup">
                 <g id="outlineGroup" class="outline-layer"></g>
@@ -544,7 +630,7 @@
             <button class="btn btn-primary" id="submitBtn" style="background:#4A7A6C; box-shadow:none;">📤 提交</button>
         </div>
     </div>
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="sidebar-header">✨ 灵感画展</div>
         <div class="exhibition-section">
             <div class="exhibition-title">🎨 同学作品集</div>
@@ -565,8 +651,9 @@
             • 单指拖拽积木，<b>自动吸附轮廓/积木</b><br>
             • 双击积木 → 顺时针旋转45°<br>
             • 双指/滚轮缩放，单指拖拽背景平移<br>
-            • 点击「提交」上传作品（可语音输入故事）<br>
-            • 下方画展横向滑动，点击图片可查看大图与故事
+            • 点击「提交」上传作品（需在白名单内）<br>
+            • 下方画展横向滑动，点击图片可查看大图与故事<br>
+            • 点击顶部「隐藏侧边栏」获得更大拼搭空间
         </div>
     </div>
 </div>
@@ -612,11 +699,12 @@
 </div>
 <script>
     (function(){
-        // API 地址
-        const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";
-        const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";
+        // ---------- API 地址 ----------
+        const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";           // 作品提交接口
+        const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";   // 画展数据接口
+        const WHITELIST_API = "https://quickform.cn/api/5tmbx2o6rg";            // 白名单验证接口
         
-        // 轮廓库 (完整27种，因篇幅只保留关键，实际已完整)
+        // ---------- 轮廓库 (完整27种) ----------
         const fullMasterShapes = [
             { key: "boat", name: "⛵ 帆船", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 430,510 L 770,510 L 700,580 L 500,580 Z" /><path d="M 590,380 L 690,490 L 590,490 Z" /><line x1="590" y1="380" x2="590" y2="510" /></svg>` },
             { key: "fish", name: "🐟 小鱼", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 460,370 C 520,300 680,320 740,390 C 680,460 520,460 460,370 Z" /><path d="M 730,380 L 790,350 L 780,420 L 730,400 Z" /><circle cx="510" cy="365" r="8" /></svg>` },
@@ -670,23 +758,37 @@
         const previewImage = document.getElementById('previewImage');
         const previewStory = document.getElementById('previewStory');
         const previewClose = document.getElementById('previewCloseBtn');
+        const sidebar = document.getElementById('sidebar');
+        const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
         
         let transforms = {}, selectedGroup = null, activeElement = null, dragOffset = {x:0,y:0}, isDragging = false;
         let isPanning = false, panAnchor = {x:0,y:0}, viewScale = 1, viewTranslate = {x:0,y:0}, lastClickTime = 0;
         const SNAP_THRESHOLD = 24, INIT_POS = { x: 0, y: 150 };
+        let isSidebarHidden = false;
         
-        // ================= 语音识别增强修复 =================
+        // 隐藏/显示侧边栏
+        function toggleSidebar() {
+            isSidebarHidden = !isSidebarHidden;
+            if (isSidebarHidden) {
+                sidebar.classList.add('hide');
+                toggleSidebarBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5h4v14H9V5zM5 5h2v14H5V5zM17 5h2v14h-2V5z"/></svg> 显示侧边栏';
+            } else {
+                sidebar.classList.remove('hide');
+                toggleSidebarBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5h4v14h-4V5zM5 5h8v14H5V5z"/></svg> 隐藏侧边栏';
+            }
+        }
+        toggleSidebarBtn.addEventListener('click', toggleSidebar);
+        
+        // 语音识别
         let recognition = null;
         let isListening = false;
         function initSpeechRecognition() {
-            // 检查浏览器支持
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
                 voiceBtn.classList.add('disabled');
                 voiceBtn.disabled = true;
                 voiceNote.innerText = '⚠️ 您的浏览器不支持语音输入，请手动输入';
                 return false;
             }
-            // 检查是否安全上下文 (https 或 localhost)
             const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
             if (!isSecure) {
                 voiceNote.innerText = '⚠️ 语音识别需要 HTTPS 或 localhost 环境，请使用手动输入';
@@ -700,12 +802,7 @@
             recognition.interimResults = false;
             recognition.lang = 'zh-CN';
             recognition.maxAlternatives = 1;
-            
-            recognition.onstart = function() {
-                isListening = true;
-                voiceBtn.classList.add('active');
-                voiceNote.innerText = '🎙️ 正在聆听，请说出故事内容...';
-            };
+            recognition.onstart = function() { isListening = true; voiceBtn.classList.add('active'); voiceNote.innerText = '🎙️ 正在聆听，请说出故事内容...'; };
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
                 const currentText = storyInput.value;
@@ -714,7 +811,6 @@
                 setTimeout(() => { if (voiceNote.innerText === '✅ 语音输入成功！') voiceNote.innerText = ''; }, 2000);
             };
             recognition.onerror = function(event) {
-                console.error('语音识别错误:', event.error);
                 let errorMsg = '';
                 switch(event.error) {
                     case 'not-allowed': errorMsg = '❌ 未获得麦克风权限，请检查浏览器设置并允许麦克风'; break;
@@ -728,17 +824,9 @@
                 voiceBtn.classList.remove('active');
                 isListening = false;
             };
-            recognition.onend = function() {
-                isListening = false;
-                voiceBtn.classList.remove('active');
-                if (voiceNote.innerText === '🎙️ 正在聆听，请说出故事内容...') {
-                    voiceNote.innerText = '';
-                }
-            };
+            recognition.onend = function() { isListening = false; voiceBtn.classList.remove('active'); };
             return true;
         }
-        
-        // 请求麦克风权限（为了触发权限弹窗，提升用户体验）
         async function requestMicrophonePermission() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 voiceNote.innerText = '⚠️ 浏览器不支持麦克风访问';
@@ -751,34 +839,16 @@
                 setTimeout(() => { if (voiceNote.innerText === '✅ 麦克风权限已获取，可以语音输入') voiceNote.innerText = ''; }, 2000);
                 return true;
             } catch (err) {
-                console.warn('麦克风权限被拒绝或出错:', err);
                 voiceNote.innerText = '❌ 无法获取麦克风权限，请手动输入故事';
                 return false;
             }
         }
-        
         voiceBtn.addEventListener('click', async () => {
-            if (!recognition) {
-                if (!initSpeechRecognition()) return;
-            }
-            if (isListening) {
-                recognition.stop();
-                return;
-            }
-            // 先请求权限（部分浏览器需要）
-            const hasPerm = await requestMicrophonePermission();
-            if (!hasPerm && voiceNote.innerText.includes('无法获取')) {
-                // 已有提示，不再重复
-            }
-            try {
-                recognition.start();
-            } catch(e) {
-                console.error('启动语音识别失败', e);
-                voiceNote.innerText = '❌ 启动失败，请刷新页面后重试';
-            }
+            if (!recognition) { if (!initSpeechRecognition()) return; }
+            if (isListening) { recognition.stop(); return; }
+            await requestMicrophonePermission();
+            try { recognition.start(); } catch(e) { voiceNote.innerText = '❌ 启动失败，请刷新页面后重试'; }
         });
-        
-        // 页面加载时初始化语音识别
         initSpeechRecognition();
         
         // 加载画展
@@ -827,7 +897,41 @@
         previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
         previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
         
-        // ----- 坐标转换与吸附 (完整保留) -----
+        // ----- 白名单验证函数 -----
+        async function checkWhitelist(className, studentName) {
+            try {
+                const formData = new FormData();
+                formData.append('class', className);
+                formData.append('name', studentName);
+                const response = await fetch(WHITELIST_API, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) {
+                    console.warn('白名单接口请求失败:', response.status);
+                    return { allowed: false, message: '白名单验证服务异常，请联系老师' };
+                }
+                const data = await response.json();
+                // 兼容不同的返回格式: { allowed: true } 或 { code:0, data:{ allowed:true } } 或 { success: true }
+                let allowed = false;
+                if (data.allowed === true) allowed = true;
+                else if (data.success === true) allowed = true;
+                else if (data.code === 0 && data.data && data.data.allowed === true) allowed = true;
+                else if (data.code === 200 && data.allowed === true) allowed = true;
+                else if (data.whitelist === true) allowed = true;
+                else if (data.result === true) allowed = true;
+                if (allowed) {
+                    return { allowed: true, message: '验证通过' };
+                } else {
+                    return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
+                }
+            } catch (err) {
+                console.error('白名单验证网络错误:', err);
+                return { allowed: false, message: '网络错误，无法验证身份，请稍后重试' };
+            }
+        }
+        
+        // ----- 坐标转换与吸附（核心）-----
         function getSVGPoint(cx,cy){ let pt=svgElem.createSVGPoint(); pt.x=cx; pt.y=cy; let ctm=svgElem.getScreenCTM(); return ctm?pt.matrixTransform(ctm.inverse()):pt; }
         function getGlobalMousePos(evt){ let cx,cy; if(evt.touches){ cx=evt.touches[0].clientX; cy=evt.touches[0].clientY; }else{ cx=evt.clientX; cy=evt.clientY; } return getSVGPoint(cx,cy); }
         function getLocalPos(evt){ let g=getGlobalMousePos(evt); return { x:(g.x-viewTranslate.x)/viewScale, y:(g.y-viewTranslate.y)/viewScale }; }
@@ -867,7 +971,7 @@
         function renderButtons(shapes){ outlineContainer.innerHTML=''; shapes.forEach(s=>{ let btn=document.createElement('button'); btn.className='outline-btn'; if(currentOutlineKey===s.key) btn.classList.add('active'); btn.setAttribute('data-key',s.key); btn.innerText=s.name; btn.addEventListener('click',()=>setOutline(s.key,s.svg)); outlineContainer.appendChild(btn); }); }
         function refreshGallery(){ currentNineShapes=getRandomNine(); renderButtons(currentNineShapes); if(!currentNineShapes.some(s=>s.key===currentOutlineKey)){ currentOutlineKey=null; document.querySelectorAll('.outline-btn').forEach(btn=>btn.classList.remove('active')); } }
         
-        // 截图核心（居中）
+        // 截图居中生成
         async function generateCenteredScreenshot() {
             const ns = "http://www.w3.org/2000/svg";
             let allPoints = [];
@@ -891,12 +995,7 @@
                 return canvas.toDataURL("image/png");
             }
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            for (let p of allPoints) {
-                minX = Math.min(minX, p.x);
-                minY = Math.min(minY, p.y);
-                maxX = Math.max(maxX, p.x);
-                maxY = Math.max(maxY, p.y);
-            }
+            for (let p of allPoints) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
             let padding = Math.max(40, Math.min((maxX - minX) * 0.15, (maxY - minY) * 0.15));
             padding = Math.min(padding, 150);
             const finalMinX = minX - padding, finalMinY = minY - padding;
@@ -906,12 +1005,7 @@
             finalSvg.setAttribute("viewBox", `${finalMinX} ${finalMinY} ${viewW} ${viewH}`);
             finalSvg.setAttribute("width", viewW); finalSvg.setAttribute("height", viewH);
             finalSvg.style.backgroundColor = "#FCFAF2";
-            if (outlineGroup.children.length > 0) {
-                for (let child of outlineGroup.children) {
-                    const clone = child.cloneNode(true);
-                    finalSvg.appendChild(clone);
-                }
-            }
+            if (outlineGroup.children.length > 0) { for (let child of outlineGroup.children) { finalSvg.appendChild(child.cloneNode(true)); } }
             for (let group of groups) {
                 const t = transforms[group.id];
                 if (!t) continue;
@@ -925,10 +1019,7 @@
                 let flipOffset = t.flip === -1 ? -2 * cx : 0;
                 gWrapper.setAttribute("transform", `translate(${t.x}, ${t.y}) rotate(${t.rotate}, ${cx}, ${cy}) scale(${t.flip}, 1) translate(${flipOffset}, 0)`);
                 gWrapper.appendChild(polyClone);
-                if (origText) {
-                    const textClone = origText.cloneNode(true);
-                    gWrapper.appendChild(textClone);
-                }
+                if (origText) { gWrapper.appendChild(origText.cloneNode(true)); }
                 finalSvg.appendChild(gWrapper);
             }
             const svgString = new XMLSerializer().serializeToString(finalSvg);
@@ -949,7 +1040,7 @@
             return canvas.toDataURL("image/png");
         }
         
-        // 提交作品（包含故事）
+        // 提交作品（增加白名单验证）
         async function submitWork(){
             submitModal.style.display='flex'; submitStatus.style.display='none'; 
             studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
@@ -960,6 +1051,17 @@
                 const story = storyInput.value.trim();
                 if (!name) { alert('请输入姓名'); return; }
                 if (!workName) { alert('请输入作品名称'); return; }
+                
+                // 白名单验证
+                submitStatus.style.display = 'block';
+                submitStatus.innerText = '🔍 正在验证身份...';
+                const whitelistResult = await checkWhitelist(className, name);
+                if (!whitelistResult.allowed) {
+                    submitStatus.innerText = whitelistResult.message;
+                    setTimeout(() => { submitStatus.style.display = 'none'; }, 3000);
+                    return;
+                }
+                
                 submitModal.style.display = 'none';
                 submitStatus.style.display = 'block';
                 submitStatus.innerText = '⏳ 正在生成作品截图...';
@@ -995,16 +1097,9 @@
                 modalConfirm.removeEventListener('click', confirmHandler);
                 modalCancel.removeEventListener('click', cancelHandler);
             };
-            const cancelHandler = () => {
-                submitModal.style.display = 'none';
-                modalConfirm.removeEventListener('click', confirmHandler);
-                modalCancel.removeEventListener('click', cancelHandler);
-            };
-            modalConfirm.removeEventListener('click', confirmHandler);
-            modalCancel.removeEventListener('click', cancelHandler);
-            modalConfirm.addEventListener('click', confirmHandler);
-            modalCancel.addEventListener('click', cancelHandler);
-            submitModal.addEventListener('click', (e)=>{ if(e.target===submitModal){ submitModal.style.display='none'; modalConfirm.removeEventListener('click', confirmHandler); modalCancel.removeEventListener('click', cancelHandler); } });
+            const cancelHandler = () => { submitModal.style.display = 'none'; };
+            modalConfirm.onclick = confirmHandler;
+            modalCancel.onclick = cancelHandler;
         }
         submitBtn.addEventListener('click', submitWork);
         
