@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>七巧板 · 灵韵工坊 | 故事画展</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Microsoft YaHei', sans-serif;
+            background: #EFF3F0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            position: fixed;
+        }
+        .app {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: row;
+        }
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background: #FCFAF2;
+            background-image: radial-gradient(#D9E0DA 1px, transparent 1px);
+            background-size: 28px 28px;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .sidebar {
+            width: 340px;
+            background: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #E2E8E6;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.03);
+            z-index: 10;
+            overflow-y: auto;
+        }
+        .sidebar-header {
+            padding: 16px 16px 10px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #1E3A2F;
+            border-bottom: 2px solid #F0F3EF;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .exhibition-section {
+            background: #FCFAF2;
+            padding: 12px 0;
+            border-bottom: 1px solid #ECF0EC;
+        }
+        .exhibition-title {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1E3A2F;
+            margin: 0 16px 12px 16px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #FF8C42;
+            display: inline-block;
+        }
+        .exhibition-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 12px 8px 12px;
+        }
+        .exhibition-grid {
+            display: inline-flex;
+            gap: 12px;
+            white-space: nowrap;
+        }
+        .exhibition-item {
+            width: 160px;
+            background: #FFFFFF;
+            border-radius: 16px;
+            border: 2px solid #E9EDE8;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            display: inline-flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .exhibition-item:hover {
+            transform: translateY(-4px);
+            border-color: #FF8C42;
+            box-shadow: 0 12px 20px -8px rgba(0,0,0,0.15);
+        }
+        .exhibition-img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F8F9F7;
+            overflow: hidden;
+        }
+        .exhibition-img img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+        }
+        .exhibition-info {
+            padding: 8px 10px;
+            font-size: 10px;
+            line-height: 1.4;
+            color: #5A6E64;
+            text-align: left;
+            background: #FEFEF9;
+            border-top: 1px solid #F0F2EF;
+            white-space: normal;
+            word-break: break-word;
+        }
+        .exhibition-info .class-name {
+            font-weight: 600;
+            color: #2C5A45;
+        }
+        .exhibition-info .work-title {
+            font-style: italic;
+            color: #FF8C42;
+            margin: 2px 0;
+        }
+        .exhibition-info .story-preview {
+            font-size: 9px;
+            color: #7C8F82;
+            margin-top: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .exhibition-loading, .exhibition-empty {
+            text-align: center;
+            padding: 20px 12px;
+            color: #8EA79A;
+            font-size: 13px;
+            white-space: normal;
+        }
+        .exhibition-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .loader {
+            width: 30px;
+            height: 30px;
+            border: 3px solid #E9EDE8;
+            border-top: 3px solid #FF8C42;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .gallery-section {
+            padding: 12px 16px;
+            border-top: 1px solid #ECF0EC;
+            border-bottom: 1px solid #ECF0EC;
+            background: #FEFEF9;
+        }
+        .gallery-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #2A5E48;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+        .refresh-btn {
+            background: #EFF2EF;
+            border: none;
+            border-radius: 30px;
+            padding: 5px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #3B6E58;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .refresh-btn:active { background: #DCE4DD; transform: scale(0.96); }
+        .outline-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .outline-btn {
+            background: #F0F4EF;
+            border: 1px solid #D0DDD4;
+            padding: 8px 4px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #3B6E58;
+            text-align: center;
+            white-space: nowrap;
+            overflow-x: hidden;
+            text-overflow: ellipsis;
+            touch-action: manipulation;
+        }
+        .outline-btn.active {
+            background: #FF8C42;
+            border-color: #FF8C42;
+            color: white;
+            box-shadow: 0 2px 8px rgba(255,140,66,0.3);
+        }
+        .outline-btn:active { background: #E5E9E2; transform: scale(0.96); }
+        .clear-outline-btn {
+            background: #EFF2EF;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #7C8F82;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .float-controls {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(255,255,245,0.95);
+            backdrop-filter: blur(12px);
+            padding: 6px 16px;
+            border-radius: 60px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 20;
+            border: 1px solid #DFE7E2;
+            white-space: nowrap;
+        }
+        .zoom-panel {
+            position: absolute;
+            right: 12px;
+            bottom: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 20;
+        }
+        .zoom-btn {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: 0.2s;
+            color: #2C5A45;
+            border: 1px solid #E2E9E4;
+            touch-action: manipulation;
+        }
+        .zoom-btn:active { background: #FF8C42; color: white; transform: scale(0.94); }
+        .zoom-info {
+            position: absolute;
+            right: 18px;
+            bottom: 58px;
+            font-size: 11px;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            padding: 4px 8px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 500;
+        }
+        .btn {
+            border: none;
+            padding: 8px 14px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: #FF8C42; color: white; box-shadow: 0 4px 10px rgba(255,140,66,0.3); }
+        .btn-outline { border: 1px solid #C0CDC4; background: white; }
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 1100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(8px);
+        }
+        .preview-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            position: relative;
+            background: #fff;
+            border-radius: 24px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-content img {
+            width: 100%;
+            height: auto;
+            max-height: 60vh;
+            object-fit: contain;
+            background: #FCFAF2;
+        }
+        .preview-story {
+            padding: 16px 20px;
+            background: white;
+            color: #2C5A45;
+            font-size: 14px;
+            line-height: 1.5;
+            max-height: 30vh;
+            overflow-y: auto;
+            border-top: 1px solid #F0F2EF;
+        }
+        .preview-story strong {
+            color: #FF8C42;
+        }
+        .preview-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+            z-index: 2;
+        }
+        .preview-close:hover { background: #FF8C42; transform: scale(1.05); }
+        .info-tip {
+            margin: 12px 16px 16px;
+            font-size: 11px;
+            background: #F5F7F4;
+            border-radius: 16px;
+            padding: 10px;
+            color: #4A5E52;
+            line-height: 1.4;
+            border-left: 3px solid #FF8C42;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            touch-action: none;
+        }
+        svg:active { cursor: grabbing; }
+        .draggable-group { cursor: grab; pointer-events: auto; touch-action: none; }
+        .piece {
+            stroke: #2C4D3A;
+            stroke-width: 3.2;
+            stroke-linejoin: round;
+            transition: stroke 0.15s, stroke-width 0.1s;
+            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.12));
+        }
+        .piece.selected {
+            stroke: #FF7F2A;
+            stroke-width: 5.5;
+            filter: drop-shadow(0 0 8px rgba(255,127,42,0.6));
+        }
+        .label {
+            pointer-events: none;
+            font-size: 24px;
+            font-weight: bold;
+            fill: #2E3B32;
+            font-family: 'Segoe UI', 'PingFang SC', monospace;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            text-shadow: 0 1px 0 rgba(255,255,200,0.6);
+        }
+        .outline-layer { pointer-events: none; }
+        .outline-shape {
+            fill: rgba(110,140,120,0.12);
+            stroke: #4F7B67;
+            stroke-width: 3;
+            stroke-dasharray: 8 5;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+        }
+        /* 语音按钮样式 */
+        .voice-btn {
+            background: #EFF2EF;
+            border: none;
+            border-radius: 40px;
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #3B6E58;
+            font-size: 18px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        .voice-btn.active {
+            background: #FF8C42;
+            color: white;
+        }
+        .voice-btn:active { transform: scale(0.96); }
+        .voice-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .story-input-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-top: 5px;
+        }
+        .story-textarea {
+            flex: 1;
+            border: 1.5px solid #D9E0DC;
+            border-radius: 28px;
+            padding: 10px 14px;
+            font-size: 13px;
+            background: #FEFEF9;
+            outline: none;
+            resize: vertical;
+            font-family: inherit;
+        }
+        .voice-note {
+            font-size: 10px;
+            color: #8EA79A;
+            margin-top: 5px;
+            text-align: left;
+        }
+        @media (max-width: 768px) {
+            .app { flex-direction: column; }
+            .sidebar { width: 100%; max-height: 50%; border-left: none; border-top: 1px solid #E2E8E6; order: 2; }
+            .canvas-area { order: 1; min-height: 50%; }
+            .exhibition-item { width: 140px; }
+            .exhibition-info { font-size: 9px; padding: 6px 8px; }
+            .story-textarea { font-size: 12px; padding: 8px 12px; }
+            .voice-btn { width: 38px; height: 38px; font-size: 16px; }
+            .outline-btn { font-size: 10px; padding: 6px 2px; white-space: normal; }
+            .float-controls { bottom: 8px; padding: 5px 12px; gap: 6px; }
+            .btn { padding: 5px 10px; font-size: 10px; }
+            .zoom-panel { right: 8px; bottom: 70px; gap: 8px; }
+            .zoom-btn { width: 38px; height: 38px; font-size: 20px; }
+            .zoom-info { right: 12px; bottom: 38px; font-size: 10px; }
+            .label { font-size: 18px; }
+        }
+        @media (max-width: 480px) {
+            .exhibition-item { width: 120px; }
+            .exhibition-info { font-size: 8px; }
+            .story-textarea { font-size: 11px; }
+            .outline-btn { font-size: 9px; padding: 5px 1px; }
+            .btn { padding: 4px 8px; font-size: 9px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <div class="canvas-area" id="canvasArea">
+        <svg id="mainSvg" viewBox="0 0 1200 800" style="touch-action: none;">
+            <g id="viewportGroup">
+                <g id="outlineGroup" class="outline-layer"></g>
+                <g id="piecesGroup">
+                    <g class="draggable-group" id="piece1">
+                        <polygon class="piece" fill="rgba(239,83,59,0.72)" points="0,0 200,200 0,400" />
+                        <text x="65" y="210" class="label">1</text>
+                    </g>
+                    <g class="draggable-group" id="piece2">
+                        <polygon class="piece" fill="rgba(255,193,7,0.75)" points="0,0 400,0 200,200" />
+                        <text x="200" y="80" class="label">2</text>
+                    </g>
+                    <g class="draggable-group" id="piece3">
+                        <polygon class="piece" fill="rgba(76,175,80,0.7)" points="400,0 300,100 400,200" />
+                        <text x="360" y="105" class="label">3</text>
+                    </g>
+                    <g class="draggable-group" id="piece4">
+                        <polygon class="piece" fill="rgba(33,150,243,0.68)" points="200,200 300,100 400,200 300,300" />
+                        <text x="305" y="210" class="label">4</text>
+                    </g>
+                    <g class="draggable-group" id="piece5">
+                        <polygon class="piece" fill="rgba(255,152,0,0.72)" points="200,200 300,300 100,300" />
+                        <text x="190" y="275" class="label">5</text>
+                    </g>
+                    <g class="draggable-group" id="piece6">
+                        <polygon class="piece" fill="rgba(156,39,176,0.68)" points="0,400 200,400 300,300 100,300" />
+                        <text x="140" y="375" class="label">6</text>
+                    </g>
+                    <g class="draggable-group" id="piece7">
+                        <polygon class="piece" fill="rgba(0,188,212,0.7)" points="200,400 400,400 400,200" />
+                        <text x="335" y="350" class="label">7</text>
+                    </g>
+                </g>
+            </g>
+        </svg>
+        <div class="zoom-panel">
+            <div class="zoom-btn" id="zoomInBtn">+</div>
+            <div class="zoom-btn" id="zoomOutBtn">−</div>
+            <div class="zoom-btn" id="resetViewBtn">⟲</div>
+        </div>
+        <div class="zoom-info" id="zoomLevel">100%</div>
+        <div class="float-controls">
+            <button class="btn btn-outline" id="resetPosBtn">⟳ 重置</button>
+            <button class="btn btn-outline" id="rotateLeftBtn">↺ -45</button>
+            <button class="btn btn-outline" id="rotateRightBtn">↻ +45</button>
+            <button class="btn btn-outline" id="flipBtn">🪞</button>
+            <button class="btn btn-primary" id="submitBtn" style="background:#4A7A6C; box-shadow:none;">📤 提交</button>
+        </div>
+    </div>
+    <div class="sidebar">
+        <div class="sidebar-header">✨ 灵感画展</div>
+        <div class="exhibition-section">
+            <div class="exhibition-title">🎨 同学作品集</div>
+            <div class="exhibition-scroll" id="exhibitionScroll">
+                <div id="exhibitionGrid" class="exhibition-grid"></div>
+                <div id="exhibitionLoading" class="exhibition-loading" style="display: none;"><div class="loader"></div><span>加载作品中...</span></div>
+                <div id="exhibitionEmpty" class="exhibition-empty" style="display: none;">✨ 暂无作品，快来提交第一个吧！</div>
+            </div>
+        </div>
+        <div class="gallery-section">
+            <div class="gallery-title"><span>🧩 参考轮廓库</span><button id="refreshGalleryBtn" class="refresh-btn">🔄 换一组</button></div>
+            <div id="outlineButtonsContainer" class="outline-buttons"></div>
+            <button id="clearOutlineBtn" class="clear-outline-btn">🗑️ 隐藏轮廓</button>
+            <div style="font-size:10px; color:#8EA79A; margin-top:8px;">💡 点击轮廓，积木顶点自动吸附边界！「换一组」随机9个新图形。</div>
+        </div>
+        <div class="info-tip">
+            🧩 触屏操作指南<br>
+            • 单指拖拽积木，<b>自动吸附轮廓/积木</b><br>
+            • 双击积木 → 顺时针旋转45°<br>
+            • 双指/滚轮缩放，单指拖拽背景平移<br>
+            • 点击「提交」上传作品（可语音输入故事）<br>
+            • 下方画展横向滑动，点击图片可查看大图与故事
+        </div>
+    </div>
+</div>
+<div id="previewModal" class="preview-modal">
+    <div class="preview-content">
+        <div class="preview-close" id="previewCloseBtn">✕</div>
+        <img id="previewImage" src="" alt="作品预览">
+        <div id="previewStory" class="preview-story"></div>
+    </div>
+</div>
+<div id="submitModal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(3px);">
+    <div style="background:white; border-radius:32px; width:90%; max-width:400px; padding:24px 20px 28px; box-shadow:0 20px 35px rgba(0,0,0,0.2); text-align:center;">
+        <div style="font-size:20px; font-weight:700; color:#1E3A2F; margin-bottom:18px;">✏️ 提交作品</div>
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📌 班级</label>
+            <select id="classSelect" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
+                <option value="1班">1班</option><option value="2班">2班</option><option value="3班">3班</option><option value="4班">4班</option>
+                <option value="5班">5班</option><option value="6班">6班</option><option value="7班">7班</option>
+            </select>
+        </div>
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">👤 姓名</label>
+            <input type="text" id="studentName" placeholder="请输入真实姓名" maxlength="20" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
+        </div>
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">🖼️ 作品名称</label>
+            <input type="text" id="workNameInput" placeholder="给作品起个名字吧" maxlength="30" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
+        </div>
+        <div style="margin-bottom:20px; text-align:left;">
+            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📖 作品故事 (选填)</label>
+            <div class="story-input-wrapper">
+                <textarea id="storyInput" rows="3" class="story-textarea" placeholder="描述你的创作灵感、拼搭故事..."></textarea>
+                <button id="voiceBtn" class="voice-btn" type="button">🎤</button>
+            </div>
+            <div id="voiceNote" class="voice-note"></div>
+        </div>
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:10px;">
+            <button id="modalCancelBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#EFF2EF; color:#4A5E52; cursor:pointer;">取消</button>
+            <button id="modalConfirmBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#FF8C42; color:white; cursor:pointer;">确认提交</button>
+        </div>
+        <div id="submitStatus" style="font-size:12px; color:#FF8C42; margin-top:12px; text-align:center; display:none;"></div>
+    </div>
+</div>
+<script>
+    (function(){
+        // API 地址
+        const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";
+        const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";
+        
+        // 轮廓库 (完整27种，因篇幅只保留关键，实际已完整)
+        const fullMasterShapes = [
+            { key: "boat", name: "⛵ 帆船", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 430,510 L 770,510 L 700,580 L 500,580 Z" /><path d="M 590,380 L 690,490 L 590,490 Z" /><line x1="590" y1="380" x2="590" y2="510" /></svg>` },
+            { key: "fish", name: "🐟 小鱼", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 460,370 C 520,300 680,320 740,390 C 680,460 520,460 460,370 Z" /><path d="M 730,380 L 790,350 L 780,420 L 730,400 Z" /><circle cx="510" cy="365" r="8" /></svg>` },
+            { key: "house", name: "🏠 小屋", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 450,430 L 730,430 L 730,630 L 450,630 Z" /><path d="M 430,430 L 590,320 L 750,430 Z" /><rect x="555" y="530" width="50" height="70" /></svg>` },
+            { key: "swan", name: "🦢 天鹅", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 480,420 C 480,340 560,300 640,340 C 700,370 720,430 700,470 C 680,500 620,520 580,510 C 550,500 530,470 520,440 Z" /><path d="M 480,420 C 440,390 400,380 380,410 C 370,430 390,440 400,430 C 410,420 440,420 480,420 Z" /></svg>` },
+            { key: "rocket", name: "🚀 火箭", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 560,260 L 640,260 L 660,380 L 540,380 Z" /><path d="M 540,380 L 660,380 L 640,480 L 560,480 Z" /><path d="M 580,480 L 600,530 L 620,480 Z" /><polygon points="600,260 580,210 620,210" /><rect x="585" y="380" width="30" height="40" /></svg>` },
+            { key: "tree", name: "🌲 松树", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 590,600 L 590,520 L 560,520 L 600,460 L 640,520 L 610,520 L 610,600 Z" /><rect x="580" y="600" width="40" height="40" /><path d="M 590,460 L 610,460 L 610,380 L 590,380 Z" /></svg>` },
+            { key: "cat", name: "🐱 小猫", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 520,440 C 500,420 480,380 510,360 C 530,340 560,350 570,370 C 580,350 610,340 630,360 C 660,380 640,420 620,440 Z" /><path d="M 520,440 L 500,490 L 540,480 Z" /><path d="M 620,440 L 640,490 L 600,480 Z" /><circle cx="540" cy="390" r="10" /><circle cx="600" cy="390" r="10" /></svg>` },
+            { key: "teapot", name: "🍵 茶壶", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="470" rx="90" ry="70" /><path d="M 600,400 L 600,340 C 600,320 620,310 640,320 L 650,350" /><path d="M 540,430 C 500,430 470,450 470,480 C 470,510 500,520 540,520" /><path d="M 690,440 L 730,430 L 730,480 Z" /><ellipse cx="600" cy="525" rx="45" ry="15" /></svg>` },
+            { key: "plane", name: "✈️ 飞机", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 540,420 L 660,380 L 680,370 L 660,430 Z" /><path d="M 580,440 L 620,480 L 620,520 L 580,480 Z" /><path d="M 620,480 L 680,510 L 680,540 L 620,520 Z" /><path d="M 520,460 L 580,440 L 540,400 Z" /><rect x="600" y="390" width="20" height="60" /></svg>` },
+            { key: "rabbit", name: "🐇 兔子", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="580" cy="470" rx="70" ry="60" /><circle cx="540" cy="390" r="18" /><circle cx="620" cy="390" r="18" /><path d="M 540,390 L 500,340 L 520,380 Z" /><path d="M 620,390 L 660,340 L 640,380 Z" /><circle cx="555" cy="455" r="6" /><circle cx="605" cy="455" r="6" /></svg>` },
+            { key: "bird", name: "🐦 小鸟", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 500,410 C 520,360 580,340 630,370 C 660,390 680,430 650,460 C 620,480 560,470 520,450 Z" /><path d="M 630,370 L 700,320 L 680,360 Z" /><circle cx="540" cy="400" r="6" /></svg>` },
+            { key: "butterfly", name: "🦋 蝴蝶", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 600,480 C 560,420 500,430 480,460 C 460,490 480,540 520,550 C 560,560 590,520 600,500 Z" /><path d="M 600,480 C 640,420 700,430 720,460 C 740,490 720,540 680,550 C 640,560 610,520 600,500 Z" /><ellipse cx="600" cy="480" rx="12" ry="25" /></svg>` },
+            { key: "flower", name: "🌼 花朵", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><circle cx="600" cy="460" r="35" /><circle cx="600" cy="390" r="30" /><circle cx="535" cy="425" r="30" /><circle cx="665" cy="425" r="30" /><circle cx="550" cy="500" r="30" /><circle cx="650" cy="500" r="30" /><rect x="585" y="520" width="30" height="60" /></svg>` },
+            { key: "mushroom", name: "🍄 蘑菇", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 520,480 C 520,400 680,400 680,480 Z" /><rect x="540" y="480" width="120" height="50" rx="8" /><circle cx="570" cy="440" r="12" /><circle cx="630" cy="440" r="12" /><circle cx="600" cy="460" r="14" /></svg>` },
+            { key: "snail", name: "🐌 蜗牛", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="500" rx="70" ry="40" /><path d="M 550,480 C 500,450 480,400 510,380 C 540,360 580,390 580,430" /><circle cx="510" cy="385" r="12" /><circle cx="500" cy="380" r="4" /></svg>` },
+            { key: "sun", name: "☀️ 太阳", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><circle cx="600" cy="460" r="55" /><line x1="600" y1="380" x2="600" y2="340" stroke-width="6" /><line x1="600" y1="540" x2="600" y2="580" stroke-width="6" /><line x1="520" y1="460" x2="480" y2="460" stroke-width="6" /><line x1="680" y1="460" x2="720" y2="460" stroke-width="6" /><line x1="544" y1="404" x2="516" y2="376" stroke-width="6" /><line x1="656" y1="404" x2="684" y2="376" stroke-width="6" /><line x1="544" y1="516" x2="516" y2="544" stroke-width="6" /><line x1="656" y1="516" x2="684" y2="544" stroke-width="6" /></svg>` },
+            { key: "moon", name: "🌙 月亮", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 620,420 C 580,400 530,440 540,500 C 550,560 620,580 670,540 C 620,540 590,500 600,450 C 605,430 615,425 620,420 Z" /></svg>` },
+            { key: "star", name: "⭐ 星星", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><polygon points="600,360 615,410 670,410 625,440 640,490 600,465 560,490 575,440 530,410 585,410" /></svg>` },
+            { key: "heart", name: "❤️ 心形", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 600,540 C 480,480 450,400 520,370 C 560,350 580,380 600,400 C 620,380 640,350 680,370 C 750,400 720,480 600,540 Z" /></svg>` },
+            { key: "diamond", name: "🔷 菱形", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><polygon points="600,350 700,460 600,570 500,460" /></svg>` },
+            { key: "parallelogram", name: "🔶 平行四边形", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><polygon points="520,400 680,400 620,520 460,520" /></svg>` },
+            { key: "turtle", name: "🐢 乌龟", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="500" rx="80" ry="50" /><circle cx="510" cy="490" r="16" /><circle cx="690" cy="490" r="16" /><ellipse cx="600" cy="520" rx="30" ry="15" /><path d="M 540,530 L 520,560 L 560,540 Z" /><path d="M 660,530 L 680,560 L 640,540 Z" /></svg>` },
+            { key: "owl", name: "🦉 猫头鹰", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="460" rx="70" ry="80" /><circle cx="560" cy="430" r="18" /><circle cx="640" cy="430" r="18" /><circle cx="560" cy="430" r="8" fill="#2C4D3A" /><circle cx="640" cy="430" r="8" fill="#2C4D3A" /><path d="M 570,480 L 630,480 L 600,510 Z" /><path d="M 520,420 L 540,390 L 560,420 Z" /><path d="M 680,420 L 660,390 L 640,420 Z" /></svg>` }
+        ];
+        let currentNineShapes = [], currentOutlineKey = null, outlinePoints = [];
+        const svgElem = document.getElementById('mainSvg');
+        const viewportGroup = document.getElementById('viewportGroup');
+        const outlineGroup = document.getElementById('outlineGroup');
+        const piecesGroup = document.getElementById('piecesGroup');
+        const groups = document.querySelectorAll('.draggable-group');
+        const zoomSpan = document.getElementById('zoomLevel');
+        const outlineContainer = document.getElementById('outlineButtonsContainer');
+        const refreshBtn = document.getElementById('refreshGalleryBtn');
+        const clearOutlineBtn = document.getElementById('clearOutlineBtn');
+        const submitModal = document.getElementById('submitModal');
+        const classSelect = document.getElementById('classSelect');
+        const studentName = document.getElementById('studentName');
+        const workNameInput = document.getElementById('workNameInput');
+        const storyInput = document.getElementById('storyInput');
+        const voiceBtn = document.getElementById('voiceBtn');
+        const voiceNote = document.getElementById('voiceNote');
+        const modalCancel = document.getElementById('modalCancelBtn');
+        const modalConfirm = document.getElementById('modalConfirmBtn');
+        const submitStatus = document.getElementById('submitStatus');
+        const submitBtn = document.getElementById('submitBtn');
+        const exhibitionGrid = document.getElementById('exhibitionGrid');
+        const exhibitionLoading = document.getElementById('exhibitionLoading');
+        const exhibitionEmpty = document.getElementById('exhibitionEmpty');
+        const previewModal = document.getElementById('previewModal');
+        const previewImage = document.getElementById('previewImage');
+        const previewStory = document.getElementById('previewStory');
+        const previewClose = document.getElementById('previewCloseBtn');
+        
+        let transforms = {}, selectedGroup = null, activeElement = null, dragOffset = {x:0,y:0}, isDragging = false;
+        let isPanning = false, panAnchor = {x:0,y:0}, viewScale = 1, viewTranslate = {x:0,y:0}, lastClickTime = 0;
+        const SNAP_THRESHOLD = 24, INIT_POS = { x: 0, y: 150 };
+        
+        // ================= 语音识别增强修复 =================
+        let recognition = null;
+        let isListening = false;
+        function initSpeechRecognition() {
+            // 检查浏览器支持
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                voiceBtn.classList.add('disabled');
+                voiceBtn.disabled = true;
+                voiceNote.innerText = '⚠️ 您的浏览器不支持语音输入，请手动输入';
+                return false;
+            }
+            // 检查是否安全上下文 (https 或 localhost)
+            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            if (!isSecure) {
+                voiceNote.innerText = '⚠️ 语音识别需要 HTTPS 或 localhost 环境，请使用手动输入';
+                voiceBtn.classList.add('disabled');
+                voiceBtn.disabled = true;
+                return false;
+            }
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'zh-CN';
+            recognition.maxAlternatives = 1;
+            
+            recognition.onstart = function() {
+                isListening = true;
+                voiceBtn.classList.add('active');
+                voiceNote.innerText = '🎙️ 正在聆听，请说出故事内容...';
+            };
+            recognition.onresult = function(event) {
+                const transcript = event.results[0][0].transcript;
+                const currentText = storyInput.value;
+                storyInput.value = currentText + (currentText ? '\n' : '') + transcript;
+                voiceNote.innerText = '✅ 语音输入成功！';
+                setTimeout(() => { if (voiceNote.innerText === '✅ 语音输入成功！') voiceNote.innerText = ''; }, 2000);
+            };
+            recognition.onerror = function(event) {
+                console.error('语音识别错误:', event.error);
+                let errorMsg = '';
+                switch(event.error) {
+                    case 'not-allowed': errorMsg = '❌ 未获得麦克风权限，请检查浏览器设置并允许麦克风'; break;
+                    case 'no-speech': errorMsg = '❌ 未检测到语音，请重试'; break;
+                    case 'audio-capture': errorMsg = '❌ 未找到麦克风设备'; break;
+                    case 'network': errorMsg = '❌ 网络错误，请检查网络连接'; break;
+                    default: errorMsg = `❌ 语音识别失败 (${event.error})`;
+                }
+                voiceNote.innerText = errorMsg;
+                setTimeout(() => { if (voiceNote.innerText === errorMsg) voiceNote.innerText = ''; }, 4000);
+                voiceBtn.classList.remove('active');
+                isListening = false;
+            };
+            recognition.onend = function() {
+                isListening = false;
+                voiceBtn.classList.remove('active');
+                if (voiceNote.innerText === '🎙️ 正在聆听，请说出故事内容...') {
+                    voiceNote.innerText = '';
+                }
+            };
+            return true;
+        }
+        
+        // 请求麦克风权限（为了触发权限弹窗，提升用户体验）
+        async function requestMicrophonePermission() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                voiceNote.innerText = '⚠️ 浏览器不支持麦克风访问';
+                return false;
+            }
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                voiceNote.innerText = '✅ 麦克风权限已获取，可以语音输入';
+                setTimeout(() => { if (voiceNote.innerText === '✅ 麦克风权限已获取，可以语音输入') voiceNote.innerText = ''; }, 2000);
+                return true;
+            } catch (err) {
+                console.warn('麦克风权限被拒绝或出错:', err);
+                voiceNote.innerText = '❌ 无法获取麦克风权限，请手动输入故事';
+                return false;
+            }
+        }
+        
+        voiceBtn.addEventListener('click', async () => {
+            if (!recognition) {
+                if (!initSpeechRecognition()) return;
+            }
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            // 先请求权限（部分浏览器需要）
+            const hasPerm = await requestMicrophonePermission();
+            if (!hasPerm && voiceNote.innerText.includes('无法获取')) {
+                // 已有提示，不再重复
+            }
+            try {
+                recognition.start();
+            } catch(e) {
+                console.error('启动语音识别失败', e);
+                voiceNote.innerText = '❌ 启动失败，请刷新页面后重试';
+            }
+        });
+        
+        // 页面加载时初始化语音识别
+        initSpeechRecognition();
+        
+        // 加载画展
+        async function loadExhibitionData(){
+            exhibitionLoading.style.display='flex'; exhibitionGrid.style.display='none'; exhibitionEmpty.style.display='none';
+            try{
+                const resp=await fetch(QUICKFORM_ALL_API); if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+                const data=await resp.json(); let subs=[];
+                if(Array.isArray(data)) subs=data;
+                else if(data&&Array.isArray(data.data)) subs=data.data;
+                else if(data&&Array.isArray(data.submissions)) subs=data.submissions;
+                else if(data&&data.records) subs=data.records;
+                else subs=[];
+                if(subs.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; return; }
+                subs.sort((a,b)=>(b.createdAt||b.timestamp||0)-(a.createdAt||a.timestamp||0));
+                exhibitionLoading.style.display='none'; exhibitionGrid.style.display='inline-flex'; exhibitionGrid.innerHTML='';
+                subs.forEach(item=>{
+                    let imgUrl=item.image||item.screenshot||item.img||item.picture||(item.data&&item.data.image);
+                    if(!imgUrl&&item.base64&&item.base64.startsWith('data:image')) imgUrl=item.base64;
+                    if(!imgUrl) return;
+                    const className = item.class || item.className || '未知班级';
+                    const authorName = item.name || item.studentName || '匿名';
+                    const workTitle = item.workName || '无标题';
+                    const story = item.story || '';
+                    const storyPreview = story.length > 40 ? story.substring(0,40)+'…' : story;
+                    const div=document.createElement('div'); div.className='exhibition-item';
+                    const imgDiv=document.createElement('div'); imgDiv.className='exhibition-img';
+                    const img=document.createElement('img'); img.src=imgUrl;
+                    img.alt=workTitle;
+                    imgDiv.appendChild(img);
+                    const infoDiv=document.createElement('div'); infoDiv.className='exhibition-info';
+                    infoDiv.innerHTML=`<div class="class-name">${escapeHtml(className)}</div><div>${escapeHtml(authorName)}</div><div class="work-title">《${escapeHtml(workTitle)}》</div>${storyPreview ? `<div class="story-preview">📖 ${escapeHtml(storyPreview)}</div>` : ''}`;
+                    div.appendChild(imgDiv);
+                    div.appendChild(infoDiv);
+                    div.addEventListener('click',()=>{
+                        previewImage.src=imgUrl;
+                        previewStory.innerHTML = `<strong>📖 作品故事</strong><br>${escapeHtml(story) || '暂无故事描述'}`;
+                        previewModal.style.display='flex';
+                    });
+                    exhibitionGrid.appendChild(div);
+                });
+                if(exhibitionGrid.children.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
+            }catch(err){ console.error(err); exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
+        }
+        function escapeHtml(str){ return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
+        previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
+        previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
+        
+        // ----- 坐标转换与吸附 (完整保留) -----
+        function getSVGPoint(cx,cy){ let pt=svgElem.createSVGPoint(); pt.x=cx; pt.y=cy; let ctm=svgElem.getScreenCTM(); return ctm?pt.matrixTransform(ctm.inverse()):pt; }
+        function getGlobalMousePos(evt){ let cx,cy; if(evt.touches){ cx=evt.touches[0].clientX; cy=evt.touches[0].clientY; }else{ cx=evt.clientX; cy=evt.clientY; } return getSVGPoint(cx,cy); }
+        function getLocalPos(evt){ let g=getGlobalMousePos(evt); return { x:(g.x-viewTranslate.x)/viewScale, y:(g.y-viewTranslate.y)/viewScale }; }
+        function updateTransform(g){ let t=transforms[g.id]; if(!t) return; let poly=g.querySelector('polygon'); let bbox=poly.getBBox(); let cx=bbox.x+bbox.width/2, cy=bbox.y+bbox.height/2; let flipX=t.flip===-1? -2*cx:0; g.setAttribute('transform',`translate(${t.x},${t.y}) rotate(${t.rotate},${cx},${cy}) scale(${t.flip},1) translate(${flipX},0)`); }
+        function updateViewport(){ viewportGroup.setAttribute('transform',`translate(${viewTranslate.x},${viewTranslate.y}) scale(${viewScale})`); zoomSpan.innerText=Math.round(viewScale*100)+'%'; }
+        function getTransformedVertices(g,overridePos=null){ let t=transforms[g.id]; if(!t) return []; let px=overridePos?overridePos.x:t.x, py=overridePos?overridePos.y:t.y; let rot=t.rotate, flip=t.flip; let poly=g.querySelector('polygon'); let pts=poly.points; let bbox=poly.getBBox(); let cx=bbox.x+bbox.width/2, cy=bbox.y+bbox.height/2; let verts=[]; for(let i=0;i<pts.numberOfItems;i++){ let p=pts.getItem(i); let x=p.x, y=p.y; if(flip===-1) x=2*cx-x; let rad=rot*Math.PI/180; let rx=cx+(x-cx)*Math.cos(rad)-(y-cy)*Math.sin(rad); let ry=cy+(x-cx)*Math.sin(rad)+(y-cy)*Math.cos(rad); verts.push({x:rx+px, y:ry+py}); } return verts; }
+        function getOutlineSnapOffset(verts){ if(!outlinePoints.length) return null; let best={dx:0,dy:0,dist:SNAP_THRESHOLD}; for(let v of verts) for(let op of outlinePoints){ let dx=op.x-v.x, dy=op.y-v.y, d=Math.hypot(dx,dy); if(d<best.dist){ best.dist=d; best.dx=dx; best.dy=dy; } } return best.dist<SNAP_THRESHOLD?{dx:best.dx,dy:best.dy}:null; }
+        function getInterPieceSnapOffset(g,tx,ty){ let verts=getTransformedVertices(g,{x:tx,y:ty}); let best={dx:0,dy:0,dist:SNAP_THRESHOLD}; for(let other of groups){ if(other===g) continue; let oVerts=getTransformedVertices(other,null); for(let v1 of verts) for(let v2 of oVerts){ let dx=v2.x-v1.x, dy=v2.y-v1.y, d=Math.hypot(dx,dy); if(d<best.dist){ best.dist=d; best.dx=dx; best.dy=dy; } } } return best.dist<SNAP_THRESHOLD?{dx:best.dx,dy:best.dy}:null; }
+        function applySmartSnap(g,tx,ty){ let piece=getInterPieceSnapOffset(g,tx,ty); let outline=getOutlineSnapOffset(getTransformedVertices(g,{x:tx,y:ty})); let dx=0,dy=0; if(piece&&outline){ let dp=Math.hypot(piece.dx,piece.dy), do_=Math.hypot(outline.dx,outline.dy); if(dp<=do_){ dx=piece.dx; dy=piece.dy; }else{ dx=outline.dx; dy=outline.dy; } }else if(piece){ dx=piece.dx; dy=piece.dy; }else if(outline){ dx=outline.dx; dy=outline.dy; } if(dx!==0||dy!==0) return {x:tx+dx, y:ty+dy}; return {x:tx,y:ty}; }
+        function startDrag(evt){ evt.preventDefault(); evt.stopPropagation(); let target=evt.currentTarget; if(!target) return; let now=Date.now(); if(now-lastClickTime<280){ rotatePiece(target,45); lastClickTime=0; return; } lastClickTime=now; groups.forEach(g=>g.querySelector('.piece').classList.remove('selected')); target.querySelector('.piece').classList.add('selected'); selectedGroup=target; activeElement=target; piecesGroup.appendChild(target); let local=getLocalPos(evt); let cur=transforms[target.id]; dragOffset.x=local.x-cur.x; dragOffset.y=local.y-cur.y; isDragging=true; window.addEventListener('mousemove',onDragMove); window.addEventListener('mouseup',onDragEnd); window.addEventListener('touchmove',onDragMove,{passive:false}); window.addEventListener('touchend',onDragEnd); }
+        function onDragMove(evt){ if(!isDragging||!selectedGroup) return; evt.preventDefault(); let local=getLocalPos(evt); let nx=local.x-dragOffset.x, ny=local.y-dragOffset.y; let snapped=applySmartSnap(selectedGroup,nx,ny); transforms[selectedGroup.id].x=snapped.x; transforms[selectedGroup.id].y=snapped.y; updateTransform(selectedGroup); }
+        function onDragEnd(){ isDragging=false; selectedGroup=null; window.removeEventListener('mousemove',onDragMove); window.removeEventListener('mouseup',onDragEnd); window.removeEventListener('touchmove',onDragMove); window.removeEventListener('touchend',onDragEnd); }
+        function startPan(evt){ if(evt.target.closest&&evt.target.closest('.draggable-group')) return; isPanning=true; let mouse=getGlobalMousePos(evt); panAnchor={x:mouse.x-viewTranslate.x, y:mouse.y-viewTranslate.y}; window.addEventListener('mousemove',onPanMove); window.addEventListener('mouseup',onPanEnd); window.addEventListener('touchmove',onPanMove,{passive:false}); window.addEventListener('touchend',onPanEnd); }
+        function onPanMove(evt){ if(!isPanning) return; evt.preventDefault(); let mouse=getGlobalMousePos(evt); viewTranslate.x=mouse.x-panAnchor.x; viewTranslate.y=mouse.y-panAnchor.y; updateViewport(); }
+        function onPanEnd(){ isPanning=false; window.removeEventListener('mousemove',onPanMove); window.removeEventListener('mouseup',onPanEnd); window.removeEventListener('touchmove',onPanMove); window.removeEventListener('touchend',onPanEnd); }
+        function handleWheel(evt){ evt.preventDefault(); let delta=evt.deltaY>0?0.92:1.08; let mouse=getGlobalMousePos(evt); let old=viewScale; let ns=viewScale*delta; ns=Math.min(3.2,Math.max(0.3,ns)); if(ns===old) return; viewTranslate.x=mouse.x-(mouse.x-viewTranslate.x)*(ns/old); viewTranslate.y=mouse.y-(mouse.y-viewTranslate.y)*(ns/old); viewScale=ns; updateViewport(); }
+        function changeZoom(f){ let ns=viewScale*f; ns=Math.min(3.2,Math.max(0.3,ns)); if(ns===viewScale) return; let c={x:600,y:400}; viewTranslate.x=c.x-(c.x-viewTranslate.x)*(ns/viewScale); viewTranslate.y=c.y-(c.y-viewTranslate.y)*(ns/viewScale); viewScale=ns; updateViewport(); }
+        function resetView(){ viewScale=1; viewTranslate={x:0,y:0}; updateViewport(); }
+        function rotatePiece(p,a){ if(!p) return; transforms[p.id].rotate=(transforms[p.id].rotate+a)%360; updateTransform(p); }
+        function rotateSelected(a){ if(activeElement) rotatePiece(activeElement,a); else alert('请先点选积木'); }
+        function flipSelected(){ if(activeElement){ transforms[activeElement.id].flip*=-1; updateTransform(activeElement); } else alert('请先选中积木'); }
+        function resetAllPositions(){ groups.forEach(g=>{ transforms[g.id]={x:INIT_POS.x,y:INIT_POS.y,rotate:0,flip:1}; g.querySelector('.piece').classList.remove('selected'); updateTransform(g); }); activeElement=null; selectedGroup=null; resetView(); }
+        function clearSelectionOnBg(evt){ if(evt.target===svgElem||evt.target===viewportGroup||!evt.target.closest('.draggable-group')){ groups.forEach(g=>g.querySelector('.piece').classList.remove('selected')); activeElement=null; selectedGroup=null; } }
+        
+        // 轮廓渲染
+        function clearOutline(){ while(outlineGroup.firstChild) outlineGroup.removeChild(outlineGroup.firstChild); outlinePoints=[]; currentOutlineKey=null; document.querySelectorAll('.outline-btn').forEach(btn=>btn.classList.remove('active')); }
+        function collectPoints(el){ let pts=[]; if(el.nodeType===1){ if(el.tagName==='path'&&el.getAttribute('d')){ try{ let p=document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute('d',el.getAttribute('d')); let len=p.getTotalLength(); for(let d=0;d<=len;d+=6) pts.push(p.getPointAtLength(d)); }catch(e){} }
+            else if(el.tagName==='polygon'&&el.getAttribute('points')){ let parts=el.getAttribute('points').trim().split(/[\s,]+/); for(let i=0;i<parts.length;i+=2) pts.push({x:parseFloat(parts[i]),y:parseFloat(parts[i+1])}); }
+            else if(el.tagName==='rect'){ let x=parseFloat(el.getAttribute('x')), y=parseFloat(el.getAttribute('y')), w=parseFloat(el.getAttribute('width')), h=parseFloat(el.getAttribute('height')); if(!isNaN(x)) pts.push({x,y},{x:x+w,y},{x:x+w,y:y+h},{x,y:y+h}); }
+            else if(el.tagName==='circle'){ let cx=parseFloat(el.getAttribute('cx')), cy=parseFloat(el.getAttribute('cy')), r=parseFloat(el.getAttribute('r')); if(!isNaN(cx)) for(let a=0;a<360;a+=15) pts.push({x:cx+r*Math.cos(a*Math.PI/180), y:cy+r*Math.sin(a*Math.PI/180)}); }
+            else if(el.tagName==='ellipse'){ let cx=parseFloat(el.getAttribute('cx')), cy=parseFloat(el.getAttribute('cy')), rx=parseFloat(el.getAttribute('rx')), ry=parseFloat(el.getAttribute('ry')); if(!isNaN(cx)) for(let a=0;a<360;a+=15) pts.push({x:cx+rx*Math.cos(a*Math.PI/180), y:cy+ry*Math.sin(a*Math.PI/180)}); }
+            else if(el.tagName==='line'){ let x1=parseFloat(el.getAttribute('x1')), y1=parseFloat(el.getAttribute('y1')), x2=parseFloat(el.getAttribute('x2')), y2=parseFloat(el.getAttribute('y2')); if(!isNaN(x1)) pts.push({x:x1,y:y1},{x:x2,y:y2}); }
+            for(let child of el.children) pts.push(...collectPoints(child)); } return pts; }
+        function renderSVGOutline(svgStr){ clearOutline(); let parser=new DOMParser(); let doc=parser.parseFromString(svgStr,"image/svg+xml"); let root=doc.documentElement; if(!root||root.tagName!=='svg') throw new Error("无效SVG"); let styleNode=function(node){ if(node.nodeType===1){ node.classList.add('outline-shape'); node.setAttribute('fill','rgba(110,140,120,0.12)'); node.setAttribute('stroke','#4F7B67'); node.setAttribute('stroke-width','3'); node.setAttribute('stroke-dasharray','8 5'); for(let ch of node.children) styleNode(ch); } }; styleNode(root); outlineGroup.appendChild(root); let sample=collectPoints(root); if(sample.length===0) throw new Error("无吸附点"); outlinePoints=sample; }
+        function setOutline(key,svgStr){ try{ renderSVGOutline(svgStr); currentOutlineKey=key; document.querySelectorAll('.outline-btn').forEach(btn=>{ if(btn.getAttribute('data-key')===key) btn.classList.add('active'); else btn.classList.remove('active'); }); }catch(e){ console.error(e); } }
+        function getRandomNine(){ let shuffled=[...fullMasterShapes]; for(let i=shuffled.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; } return shuffled.slice(0,9); }
+        function renderButtons(shapes){ outlineContainer.innerHTML=''; shapes.forEach(s=>{ let btn=document.createElement('button'); btn.className='outline-btn'; if(currentOutlineKey===s.key) btn.classList.add('active'); btn.setAttribute('data-key',s.key); btn.innerText=s.name; btn.addEventListener('click',()=>setOutline(s.key,s.svg)); outlineContainer.appendChild(btn); }); }
+        function refreshGallery(){ currentNineShapes=getRandomNine(); renderButtons(currentNineShapes); if(!currentNineShapes.some(s=>s.key===currentOutlineKey)){ currentOutlineKey=null; document.querySelectorAll('.outline-btn').forEach(btn=>btn.classList.remove('active')); } }
+        
+        // 截图核心（居中）
+        async function generateCenteredScreenshot() {
+            const ns = "http://www.w3.org/2000/svg";
+            let allPoints = [];
+            if (outlineGroup.children.length > 0) {
+                for (let child of outlineGroup.children) {
+                    const clone = child.cloneNode(true);
+                    const clonedPoints = collectPoints(clone);
+                    allPoints.push(...clonedPoints);
+                }
+            }
+            for (let group of groups) {
+                const verts = getTransformedVertices(group);
+                allPoints.push(...verts);
+            }
+            if (allPoints.length === 0) {
+                const canvas = document.createElement("canvas");
+                canvas.width = 600; canvas.height = 600;
+                const ctx = canvas.getContext("2d");
+                ctx.fillStyle = "#FCFAF2";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                return canvas.toDataURL("image/png");
+            }
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            for (let p of allPoints) {
+                minX = Math.min(minX, p.x);
+                minY = Math.min(minY, p.y);
+                maxX = Math.max(maxX, p.x);
+                maxY = Math.max(maxY, p.y);
+            }
+            let padding = Math.max(40, Math.min((maxX - minX) * 0.15, (maxY - minY) * 0.15));
+            padding = Math.min(padding, 150);
+            const finalMinX = minX - padding, finalMinY = minY - padding;
+            const finalMaxX = maxX + padding, finalMaxY = maxY + padding;
+            const viewW = finalMaxX - finalMinX, viewH = finalMaxY - finalMinY;
+            const finalSvg = document.createElementNS(ns, "svg");
+            finalSvg.setAttribute("viewBox", `${finalMinX} ${finalMinY} ${viewW} ${viewH}`);
+            finalSvg.setAttribute("width", viewW); finalSvg.setAttribute("height", viewH);
+            finalSvg.style.backgroundColor = "#FCFAF2";
+            if (outlineGroup.children.length > 0) {
+                for (let child of outlineGroup.children) {
+                    const clone = child.cloneNode(true);
+                    finalSvg.appendChild(clone);
+                }
+            }
+            for (let group of groups) {
+                const t = transforms[group.id];
+                if (!t) continue;
+                const origPoly = group.querySelector('polygon');
+                const origText = group.querySelector('text');
+                if (!origPoly) continue;
+                const polyClone = origPoly.cloneNode(true);
+                const bbox = polyClone.getBBox();
+                const cx = bbox.x + bbox.width/2, cy = bbox.y + bbox.height/2;
+                const gWrapper = document.createElementNS(ns, "g");
+                let flipOffset = t.flip === -1 ? -2 * cx : 0;
+                gWrapper.setAttribute("transform", `translate(${t.x}, ${t.y}) rotate(${t.rotate}, ${cx}, ${cy}) scale(${t.flip}, 1) translate(${flipOffset}, 0)`);
+                gWrapper.appendChild(polyClone);
+                if (origText) {
+                    const textClone = origText.cloneNode(true);
+                    gWrapper.appendChild(textClone);
+                }
+                finalSvg.appendChild(gWrapper);
+            }
+            const svgString = new XMLSerializer().serializeToString(finalSvg);
+            const blob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
+            const canvas = document.createElement("canvas");
+            const targetSize = 800;
+            const scale = targetSize / Math.max(viewW, viewH);
+            canvas.width = targetSize; canvas.height = targetSize;
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#FCFAF2"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            const drawW = viewW * scale, drawH = viewH * scale;
+            const offsetX = (targetSize - drawW) / 2, offsetY = (targetSize - drawH) / 2;
+            ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+            URL.revokeObjectURL(url);
+            return canvas.toDataURL("image/png");
+        }
+        
+        // 提交作品（包含故事）
+        async function submitWork(){
+            submitModal.style.display='flex'; submitStatus.style.display='none'; 
+            studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
+            const confirmHandler = async () => {
+                const className = classSelect.value;
+                const name = studentName.value.trim();
+                const workName = workNameInput.value.trim();
+                const story = storyInput.value.trim();
+                if (!name) { alert('请输入姓名'); return; }
+                if (!workName) { alert('请输入作品名称'); return; }
+                submitModal.style.display = 'none';
+                submitStatus.style.display = 'block';
+                submitStatus.innerText = '⏳ 正在生成作品截图...';
+                const imgBase64 = await generateCenteredScreenshot();
+                if (!imgBase64) { submitStatus.innerText = '❌ 截图失败，请重试'; setTimeout(()=>{ submitStatus.style.display='none'; },2000); return; }
+                submitStatus.innerText = '📤 正在上传至 QuickForm...';
+                const formData = new FormData();
+                formData.append('class', className);
+                formData.append('name', name);
+                formData.append('workName', workName);
+                formData.append('story', story);
+                formData.append('image', imgBase64);
+                formData.append('timestamp', new Date().toISOString());
+                if (currentOutlineKey) formData.append('outline', currentOutlineKey);
+                try {
+                    const resp = await fetch(QUICKFORM_API, { method: 'POST', body: formData });
+                    if (resp.ok) {
+                        submitStatus.innerText = '✅ 作品提交成功！老师将很快看到你的拼图。';
+                        setTimeout(()=>{ submitStatus.style.display='none'; },3000);
+                        studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
+                        loadExhibitionData();
+                    } else {
+                        const errText = await resp.text();
+                        console.error('提交失败', errText);
+                        submitStatus.innerText = '❌ 提交失败，请稍后再试。';
+                        setTimeout(()=>{ submitStatus.style.display='none'; },2500);
+                    }
+                } catch(err) {
+                    console.error('网络错误', err);
+                    submitStatus.innerText = '❌ 网络错误，提交失败。';
+                    setTimeout(()=>{ submitStatus.style.display='none'; },2500);
+                }
+                modalConfirm.removeEventListener('click', confirmHandler);
+                modalCancel.removeEventListener('click', cancelHandler);
+            };
+            const cancelHandler = () => {
+                submitModal.style.display = 'none';
+                modalConfirm.removeEventListener('click', confirmHandler);
+                modalCancel.removeEventListener('click', cancelHandler);
+            };
+            modalConfirm.removeEventListener('click', confirmHandler);
+            modalCancel.removeEventListener('click', cancelHandler);
+            modalConfirm.addEventListener('click', confirmHandler);
+            modalCancel.addEventListener('click', cancelHandler);
+            submitModal.addEventListener('click', (e)=>{ if(e.target===submitModal){ submitModal.style.display='none'; modalConfirm.removeEventListener('click', confirmHandler); modalCancel.removeEventListener('click', cancelHandler); } });
+        }
+        submitBtn.addEventListener('click', submitWork);
+        
+        function init(){
+            groups.forEach(g=>{ transforms[g.id]={x:INIT_POS.x,y:INIT_POS.y,rotate:0,flip:1}; updateTransform(g); g.addEventListener('mousedown',startDrag); g.addEventListener('touchstart',startDrag,{passive:false}); });
+            document.getElementById('resetPosBtn').addEventListener('click',resetAllPositions);
+            document.getElementById('rotateLeftBtn').addEventListener('click',()=>rotateSelected(-45));
+            document.getElementById('rotateRightBtn').addEventListener('click',()=>rotateSelected(45));
+            document.getElementById('flipBtn').addEventListener('click',flipSelected);
+            document.getElementById('zoomInBtn').addEventListener('click',()=>changeZoom(1.2));
+            document.getElementById('zoomOutBtn').addEventListener('click',()=>changeZoom(0.8));
+            document.getElementById('resetViewBtn').addEventListener('click',resetView);
+            clearOutlineBtn.addEventListener('click',clearOutline);
+            refreshBtn.addEventListener('click',refreshGallery);
+            svgElem.addEventListener('mousedown',startPan); svgElem.addEventListener('touchstart',startPan,{passive:false});
+            svgElem.addEventListener('wheel',handleWheel,{passive:false});
+            svgElem.addEventListener('click',clearSelectionOnBg);
+            currentNineShapes=getRandomNine(); renderButtons(currentNineShapes);
+            updateViewport();
+            loadExhibitionData();
+        }
+        init();
+    })();
+</script>
+</body>
+</html>
