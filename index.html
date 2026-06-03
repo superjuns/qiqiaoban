@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>七巧板 · 灵韵工坊 | 白名单验证</title>
+    <title>七巧板 · 灵韵工坊 | 音频故事+白名单验证</title>
     <style>
         * {
             margin: 0;
@@ -490,6 +490,7 @@
             stroke-dasharray: 8 5;
             filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
         }
+        /* 语音按钮样式 */
         .voice-btn {
             background: #EFF2EF;
             border: none;
@@ -505,6 +506,8 @@
             font-size: 18px;
             margin-left: 8px;
             vertical-align: middle;
+            touch-action: manipulation;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .voice-btn.active {
             background: #FF8C42;
@@ -515,28 +518,114 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        /* 美化故事文本框区域 */
         .story-input-wrapper {
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            gap: 12px;
             margin-top: 5px;
         }
         .story-textarea {
             flex: 1;
-            border: 1.5px solid #D9E0DC;
-            border-radius: 28px;
-            padding: 10px 14px;
-            font-size: 13px;
-            background: #FEFEF9;
+            border: 1.5px solid #E2E9E4;
+            border-radius: 24px;
+            padding: 12px 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            background: #FFFFFF;
             outline: none;
             resize: vertical;
             font-family: inherit;
+            transition: all 0.2s ease;
+            color: #2C4D3A;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .story-textarea:focus {
+            border-color: #FF8C42;
+            box-shadow: 0 0 0 3px rgba(255,140,66,0.15);
+        }
+        .story-textarea::placeholder {
+            color: #BECDC2;
+            font-weight: 400;
         }
         .voice-note {
             font-size: 10px;
             color: #8EA79A;
-            margin-top: 5px;
-            text-align: left;
+            margin-top: 6px;
+            padding-left: 4px;
+        }
+        .voice-tip {
+            font-size: 10px;
+            color: #FF8C42;
+            background: #FFF3E6;
+            padding: 8px 12px;
+            border-radius: 24px;
+            margin-top: 10px;
+            text-align: center;
+            display: block;
+        }
+        /* 音频录制区域 */
+        .audio-group {
+            margin-top: 18px;
+            padding: 14px;
+            background: #F8F9F7;
+            border-radius: 28px;
+        }
+        .audio-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2C5A45;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .audio-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .record-btn {
+            background: #EFF2EF;
+            border: none;
+            border-radius: 40px;
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #3B6E58;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .record-btn.recording {
+            background: #E05A3A;
+            color: white;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        .record-btn:active { transform: scale(0.96); }
+        .audio-player {
+            margin-top: 12px;
+            width: 100%;
+        }
+        .audio-player audio {
+            width: 100%;
+            height: 40px;
+            border-radius: 28px;
+        }
+        .audio-note {
+            font-size: 10px;
+            color: #8EA79A;
+            margin-top: 8px;
         }
         @media (max-width: 768px) {
             .sidebar {
@@ -544,7 +633,7 @@
             }
             .exhibition-item { width: 140px; }
             .exhibition-info { font-size: 9px; padding: 6px 8px; }
-            .story-textarea { font-size: 12px; padding: 8px 12px; }
+            .story-textarea { font-size: 13px; padding: 10px 14px; }
             .voice-btn { width: 38px; height: 38px; font-size: 16px; }
             .outline-btn { font-size: 10px; padding: 6px 2px; white-space: normal; }
             .float-controls { bottom: 8px; padding: 5px 12px; gap: 6px; }
@@ -562,13 +651,23 @@
                 padding: 4px 10px;
                 font-size: 12px;
             }
+            .voice-tip {
+                font-size: 9px;
+                padding: 6px 10px;
+            }
+            .audio-controls { flex-direction: column; align-items: stretch; }
+            .record-btn { justify-content: center; }
         }
         @media (max-width: 480px) {
             .exhibition-item { width: 120px; }
             .exhibition-info { font-size: 8px; }
-            .story-textarea { font-size: 11px; }
+            .story-textarea { font-size: 12px; padding: 8px 12px; }
             .outline-btn { font-size: 9px; padding: 5px 1px; }
             .btn { padding: 4px 8px; font-size: 9px; }
+            .voice-tip {
+                font-size: 8px;
+                padding: 5px 8px;
+            }
         }
     </style>
 </head>
@@ -652,8 +751,8 @@
             • 双击积木 → 顺时针旋转45°<br>
             • 双指/滚轮缩放，单指拖拽背景平移<br>
             • 点击「提交」上传作品（需在白名单内）<br>
-            • 下方画展横向滑动，点击图片可查看大图与故事<br>
-            • 点击顶部「隐藏侧边栏」获得更大拼搭空间
+            • 可录制音频故事（最长60秒）<br>
+            • 下方画展横向滑动，点击图片可查看大图与故事
         </div>
     </div>
 </div>
@@ -665,7 +764,7 @@
     </div>
 </div>
 <div id="submitModal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(3px);">
-    <div style="background:white; border-radius:32px; width:90%; max-width:400px; padding:24px 20px 28px; box-shadow:0 20px 35px rgba(0,0,0,0.2); text-align:center;">
+    <div style="background:white; border-radius:32px; width:90%; max-width:450px; padding:24px 20px 28px; box-shadow:0 20px 35px rgba(0,0,0,0.2); text-align:center; max-height:85vh; overflow-y:auto;">
         <div style="font-size:20px; font-weight:700; color:#1E3A2F; margin-bottom:18px;">✏️ 提交作品</div>
         <div style="margin-bottom:15px; text-align:left;">
             <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📌 班级</label>
@@ -682,15 +781,29 @@
             <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">🖼️ 作品名称</label>
             <input type="text" id="workNameInput" placeholder="给作品起个名字吧" maxlength="30" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
         </div>
-        <div style="margin-bottom:20px; text-align:left;">
-            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📖 作品故事 (选填)</label>
+        <!-- 语音故事区域（放在上面） -->
+        <div class="audio-group">
+            <div class="audio-title">🎙️ 语音故事 (选填，直接录音)</div>
+            <div class="audio-controls">
+                <button id="startRecordBtn" class="record-btn">🎤 开始录音</button>
+                <button id="stopRecordBtn" class="record-btn" disabled>⏹️ 停止录音</button>
+            </div>
+            <div id="audioPlayerContainer" class="audio-player" style="display: none;">
+                <audio id="audioPlayer" controls></audio>
+            </div>
+            <div id="audioStatus" class="audio-note">录音最长60秒，完成后可预览</div>
+        </div>
+        <!-- 作品故事文字输入区域（放在下面） -->
+        <div style="margin-bottom:15px; text-align:left;">
+            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📖 作品故事 (选填，文字)</label>
             <div class="story-input-wrapper">
                 <textarea id="storyInput" rows="3" class="story-textarea" placeholder="描述你的创作灵感、拼搭故事..."></textarea>
                 <button id="voiceBtn" class="voice-btn" type="button">🎤</button>
             </div>
             <div id="voiceNote" class="voice-note"></div>
+            <div class="voice-tip">💡 语音转文字请用浏览器打开，并允许开启麦克风。如无法使用请手动输入。</div>
         </div>
-        <div style="display:flex; gap:12px; justify-content:center; margin-top:10px;">
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
             <button id="modalCancelBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#EFF2EF; color:#4A5E52; cursor:pointer;">取消</button>
             <button id="modalConfirmBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#FF8C42; color:white; cursor:pointer;">确认提交</button>
         </div>
@@ -747,6 +860,11 @@
         const storyInput = document.getElementById('storyInput');
         const voiceBtn = document.getElementById('voiceBtn');
         const voiceNote = document.getElementById('voiceNote');
+        const startRecordBtn = document.getElementById('startRecordBtn');
+        const stopRecordBtn = document.getElementById('stopRecordBtn');
+        const audioPlayerContainer = document.getElementById('audioPlayerContainer');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const audioStatus = document.getElementById('audioStatus');
         const modalCancel = document.getElementById('modalCancelBtn');
         const modalConfirm = document.getElementById('modalConfirmBtn');
         const submitStatus = document.getElementById('submitStatus');
@@ -766,6 +884,12 @@
         const SNAP_THRESHOLD = 24, INIT_POS = { x: 0, y: 150 };
         let isSidebarHidden = false;
         
+        // 录音相关变量
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordedAudioBlob = null;
+        let isRecording = false;
+        
         // 隐藏/显示侧边栏
         function toggleSidebar() {
             isSidebarHidden = !isSidebarHidden;
@@ -779,48 +903,46 @@
         }
         toggleSidebarBtn.addEventListener('click', toggleSidebar);
         
-        // 语音识别
+        // 语音转文字
         let recognition = null;
         let isListening = false;
         function initSpeechRecognition() {
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                voiceBtn.classList.add('disabled');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
                 voiceBtn.disabled = true;
-                voiceNote.innerText = '⚠️ 您的浏览器不支持语音输入，请手动输入';
+                voiceBtn.classList.add('disabled');
+                voiceNote.innerText = '❌ 您的浏览器不支持语音识别，请手动输入';
                 return false;
             }
             const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
             if (!isSecure) {
-                voiceNote.innerText = '⚠️ 语音识别需要 HTTPS 或 localhost 环境，请使用手动输入';
-                voiceBtn.classList.add('disabled');
+                voiceNote.innerText = '⚠️ 请使用 http://localhost 或 https 访问，否则无法语音输入';
                 voiceBtn.disabled = true;
+                voiceBtn.classList.add('disabled');
                 return false;
             }
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = 'zh-CN';
             recognition.maxAlternatives = 1;
-            recognition.onstart = function() { isListening = true; voiceBtn.classList.add('active'); voiceNote.innerText = '🎙️ 正在聆听，请说出故事内容...'; };
+            recognition.onstart = function() { isListening = true; voiceBtn.classList.add('active'); voiceNote.innerText = '🎙️ 正在聆听...'; };
             recognition.onresult = function(event) {
                 const transcript = event.results[0][0].transcript;
-                const currentText = storyInput.value;
-                storyInput.value = currentText + (currentText ? '\n' : '') + transcript;
+                const current = storyInput.value;
+                storyInput.value = current + (current ? '\n' : '') + transcript;
                 voiceNote.innerText = '✅ 语音输入成功！';
                 setTimeout(() => { if (voiceNote.innerText === '✅ 语音输入成功！') voiceNote.innerText = ''; }, 2000);
             };
             recognition.onerror = function(event) {
-                let errorMsg = '';
+                let msg = '';
                 switch(event.error) {
-                    case 'not-allowed': errorMsg = '❌ 未获得麦克风权限，请检查浏览器设置并允许麦克风'; break;
-                    case 'no-speech': errorMsg = '❌ 未检测到语音，请重试'; break;
-                    case 'audio-capture': errorMsg = '❌ 未找到麦克风设备'; break;
-                    case 'network': errorMsg = '❌ 网络错误，请检查网络连接'; break;
-                    default: errorMsg = `❌ 语音识别失败 (${event.error})`;
+                    case 'not-allowed': msg = '❌ 未获得麦克风权限，请允许麦克风'; break;
+                    case 'no-speech': msg = '❌ 未检测到语音'; break;
+                    default: msg = `❌ 识别失败 (${event.error})`;
                 }
-                voiceNote.innerText = errorMsg;
-                setTimeout(() => { if (voiceNote.innerText === errorMsg) voiceNote.innerText = ''; }, 4000);
+                voiceNote.innerText = msg;
+                setTimeout(() => { if (voiceNote.innerText === msg) voiceNote.innerText = ''; }, 4000);
                 voiceBtn.classList.remove('active');
                 isListening = false;
             };
@@ -829,17 +951,17 @@
         }
         async function requestMicrophonePermission() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                voiceNote.innerText = '⚠️ 浏览器不支持麦克风访问';
+                voiceNote.innerText = '⚠️ 浏览器不支持麦克风';
                 return false;
             }
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
-                voiceNote.innerText = '✅ 麦克风权限已获取，可以语音输入';
-                setTimeout(() => { if (voiceNote.innerText === '✅ 麦克风权限已获取，可以语音输入') voiceNote.innerText = ''; }, 2000);
+                voiceNote.innerText = '✅ 麦克风权限已获取';
+                setTimeout(() => { if (voiceNote.innerText === '✅ 麦克风权限已获取') voiceNote.innerText = ''; }, 2000);
                 return true;
             } catch (err) {
-                voiceNote.innerText = '❌ 无法获取麦克风权限，请手动输入故事';
+                voiceNote.innerText = '❌ 无法获取麦克风权限';
                 return false;
             }
         }
@@ -847,9 +969,59 @@
             if (!recognition) { if (!initSpeechRecognition()) return; }
             if (isListening) { recognition.stop(); return; }
             await requestMicrophonePermission();
-            try { recognition.start(); } catch(e) { voiceNote.innerText = '❌ 启动失败，请刷新页面后重试'; }
+            try { recognition.start(); } catch(e) { voiceNote.innerText = '❌ 启动失败'; }
         });
         initSpeechRecognition();
+        
+        // 录音功能
+        async function startRecording() {
+            if (isRecording) return;
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    recordedAudioBlob = audioBlob;
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayer.src = audioUrl;
+                    audioPlayerContainer.style.display = 'block';
+                    audioStatus.innerText = '✅ 录音完成，可预览。最长60秒。';
+                    if (mediaRecorder.stream) {
+                        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+                    }
+                    isRecording = false;
+                    startRecordBtn.disabled = false;
+                    stopRecordBtn.disabled = true;
+                };
+                mediaRecorder.start();
+                isRecording = true;
+                startRecordBtn.disabled = true;
+                stopRecordBtn.disabled = false;
+                startRecordBtn.classList.add('recording');
+                audioStatus.innerText = '🔴 录音中... 最长60秒';
+                setTimeout(() => {
+                    if (isRecording) {
+                        stopRecording();
+                    }
+                }, 60000);
+            } catch (err) {
+                console.error('录音启动失败', err);
+                audioStatus.innerText = '❌ 无法录音，请检查麦克风权限';
+                startRecordBtn.disabled = false;
+            }
+        }
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                startRecordBtn.classList.remove('recording');
+            }
+        }
+        startRecordBtn.addEventListener('click', startRecording);
+        stopRecordBtn.addEventListener('click', stopRecording);
         
         // 加载画展
         async function loadExhibitionData(){
@@ -897,41 +1069,27 @@
         previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
         previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
         
-        // ----- 白名单验证函数 -----
+        // 白名单验证
         async function checkWhitelist(className, studentName) {
             try {
                 const formData = new FormData();
                 formData.append('class', className);
                 formData.append('name', studentName);
-                const response = await fetch(WHITELIST_API, {
-                    method: 'POST',
-                    body: formData
-                });
-                if (!response.ok) {
-                    console.warn('白名单接口请求失败:', response.status);
-                    return { allowed: false, message: '白名单验证服务异常，请联系老师' };
-                }
+                const response = await fetch(WHITELIST_API, { method: 'POST', body: formData });
+                if (!response.ok) return { allowed: false, message: '白名单验证服务异常' };
                 const data = await response.json();
-                // 兼容不同的返回格式: { allowed: true } 或 { code:0, data:{ allowed:true } } 或 { success: true }
                 let allowed = false;
                 if (data.allowed === true) allowed = true;
                 else if (data.success === true) allowed = true;
-                else if (data.code === 0 && data.data && data.data.allowed === true) allowed = true;
-                else if (data.code === 200 && data.allowed === true) allowed = true;
-                else if (data.whitelist === true) allowed = true;
                 else if (data.result === true) allowed = true;
-                if (allowed) {
-                    return { allowed: true, message: '验证通过' };
-                } else {
-                    return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
-                }
+                if (allowed) return { allowed: true, message: '验证通过' };
+                else return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
             } catch (err) {
-                console.error('白名单验证网络错误:', err);
-                return { allowed: false, message: '网络错误，无法验证身份，请稍后重试' };
+                return { allowed: false, message: '网络错误，无法验证身份' };
             }
         }
         
-        // ----- 坐标转换与吸附（核心）-----
+        // ----- 坐标转换与吸附（核心，完整保留）-----
         function getSVGPoint(cx,cy){ let pt=svgElem.createSVGPoint(); pt.x=cx; pt.y=cy; let ctm=svgElem.getScreenCTM(); return ctm?pt.matrixTransform(ctm.inverse()):pt; }
         function getGlobalMousePos(evt){ let cx,cy; if(evt.touches){ cx=evt.touches[0].clientX; cy=evt.touches[0].clientY; }else{ cx=evt.clientX; cy=evt.clientY; } return getSVGPoint(cx,cy); }
         function getLocalPos(evt){ let g=getGlobalMousePos(evt); return { x:(g.x-viewTranslate.x)/viewScale, y:(g.y-viewTranslate.y)/viewScale }; }
@@ -1040,10 +1198,18 @@
             return canvas.toDataURL("image/png");
         }
         
-        // 提交作品（增加白名单验证）
+        // 提交作品（白名单验证 + 截图 + 录音文件）
         async function submitWork(){
             submitModal.style.display='flex'; submitStatus.style.display='none'; 
             studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
+            recordedAudioBlob = null;
+            audioPlayerContainer.style.display = 'none';
+            audioPlayer.src = '';
+            audioStatus.innerText = '录音最长60秒，完成后可预览';
+            startRecordBtn.disabled = false;
+            stopRecordBtn.disabled = true;
+            if (mediaRecorder && isRecording) stopRecording();
+            
             const confirmHandler = async () => {
                 const className = classSelect.value;
                 const name = studentName.value.trim();
@@ -1052,7 +1218,6 @@
                 if (!name) { alert('请输入姓名'); return; }
                 if (!workName) { alert('请输入作品名称'); return; }
                 
-                // 白名单验证
                 submitStatus.style.display = 'block';
                 submitStatus.innerText = '🔍 正在验证身份...';
                 const whitelistResult = await checkWhitelist(className, name);
@@ -1076,12 +1241,18 @@
                 formData.append('image', imgBase64);
                 formData.append('timestamp', new Date().toISOString());
                 if (currentOutlineKey) formData.append('outline', currentOutlineKey);
+                if (recordedAudioBlob) {
+                    formData.append('audio', recordedAudioBlob, 'story.webm');
+                }
                 try {
                     const resp = await fetch(QUICKFORM_API, { method: 'POST', body: formData });
                     if (resp.ok) {
                         submitStatus.innerText = '✅ 作品提交成功！老师将很快看到你的拼图。';
                         setTimeout(()=>{ submitStatus.style.display='none'; },3000);
                         studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
+                        recordedAudioBlob = null;
+                        audioPlayerContainer.style.display = 'none';
+                        audioPlayer.src = '';
                         loadExhibitionData();
                     } else {
                         const errText = await resp.text();
