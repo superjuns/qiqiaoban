@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>七巧板 · 灵韵工坊 | 音频故事+白名单验证</title>
+    <title>七巧板 · 灵韵工坊 | 白名单验证</title>
     <style>
         * {
             margin: 0;
@@ -781,7 +781,7 @@
             <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">🖼️ 作品名称</label>
             <input type="text" id="workNameInput" placeholder="给作品起个名字吧" maxlength="30" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
         </div>
-        <!-- 语音故事区域（放在上面） -->
+        <!-- 语音故事区域 -->
         <div class="audio-group">
             <div class="audio-title">🎙️ 语音故事 (选填，直接录音)</div>
             <div class="audio-controls">
@@ -793,7 +793,7 @@
             </div>
             <div id="audioStatus" class="audio-note">录音最长60秒，完成后可预览</div>
         </div>
-        <!-- 作品故事文字输入区域（放在下面） -->
+        <!-- 作品故事文字输入区域 -->
         <div style="margin-bottom:15px; text-align:left;">
             <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📖 作品故事 (选填，文字)</label>
             <div class="story-input-wrapper">
@@ -813,9 +813,9 @@
 <script>
     (function(){
         // ---------- API 地址 ----------
-        const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";           // 作品提交接口
-        const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";   // 画展数据接口
-        const WHITELIST_API = "https://quickform.cn/api/5tmbx2o6rg";            // 白名单验证接口
+        const QUICKFORM_API = "https://quickform.cn/api/sbtvcf3ivf";                // 作品提交接口
+        const QUICKFORM_ALL_API = "https://quickform.cn/api/sbtvcf3ivf/all";        // 画展数据接口
+        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口（获取所有白名单用户）
         
         // ---------- 轮廓库 (完整27种) ----------
         const fullMasterShapes = [
@@ -1069,23 +1069,36 @@
         previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
         previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
         
-        // 白名单验证
+        // ----- 白名单验证函数（调用 /all 接口获取所有白名单用户，在前端核对）-----
+        let whitelistCache = null;  // 缓存白名单数据，避免重复请求
+        
         async function checkWhitelist(className, studentName) {
             try {
-                const formData = new FormData();
-                formData.append('class', className);
-                formData.append('name', studentName);
-                const response = await fetch(WHITELIST_API, { method: 'POST', body: formData });
-                if (!response.ok) return { allowed: false, message: '白名单验证服务异常' };
-                const data = await response.json();
-                let allowed = false;
-                if (data.allowed === true) allowed = true;
-                else if (data.success === true) allowed = true;
-                else if (data.result === true) allowed = true;
-                if (allowed) return { allowed: true, message: '验证通过' };
-                else return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
+                // 如果已有缓存则直接使用
+                if (!whitelistCache) {
+                    const response = await fetch(WHITELIST_ALL_API);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    // 根据接口返回结构，白名单数据在 submissions 数组中
+                    whitelistCache = data.submissions || data.data || [];
+                    if (!Array.isArray(whitelistCache)) whitelistCache = [];
+                }
+                
+                // 在白名单中查找匹配项（班级和姓名均需匹配）
+                const matched = whitelistCache.some(entry => {
+                    const entryClass = entry.class || entry.className || '';
+                    const entryName = entry.name || entry.studentName || '';
+                    return entryClass === className && entryName === studentName;
+                });
+                
+                if (matched) {
+                    return { allowed: true, message: '验证通过' };
+                } else {
+                    return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
+                }
             } catch (err) {
-                return { allowed: false, message: '网络错误，无法验证身份' };
+                console.error('白名单验证失败:', err);
+                return { allowed: false, message: '白名单验证服务异常，请稍后重试' };
             }
         }
         
@@ -1220,6 +1233,8 @@
                 
                 submitStatus.style.display = 'block';
                 submitStatus.innerText = '🔍 正在验证身份...';
+                
+                // 白名单验证
                 const whitelistResult = await checkWhitelist(className, name);
                 if (!whitelistResult.allowed) {
                     submitStatus.innerText = whitelistResult.message;
