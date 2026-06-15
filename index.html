@@ -490,34 +490,6 @@
             stroke-dasharray: 8 5;
             filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
         }
-        /* 语音按钮样式 */
-        .voice-btn {
-            background: #EFF2EF;
-            border: none;
-            border-radius: 40px;
-            width: 44px;
-            height: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #3B6E58;
-            font-size: 18px;
-            margin-left: 8px;
-            vertical-align: middle;
-            touch-action: manipulation;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .voice-btn.active {
-            background: #FF8C42;
-            color: white;
-        }
-        .voice-btn:active { transform: scale(0.96); }
-        .voice-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
         /* 美化故事文本框区域 */
         .story-input-wrapper {
             display: flex;
@@ -564,69 +536,6 @@
             text-align: center;
             display: block;
         }
-        /* 音频录制区域 */
-        .audio-group {
-            margin-top: 18px;
-            padding: 14px;
-            background: #F8F9F7;
-            border-radius: 28px;
-        }
-        .audio-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #2C5A45;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .audio-controls {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .record-btn {
-            background: #EFF2EF;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 18px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #3B6E58;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            touch-action: manipulation;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        .record-btn.recording {
-            background: #E05A3A;
-            color: white;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-        .record-btn:active { transform: scale(0.96); }
-        .audio-player {
-            margin-top: 12px;
-            width: 100%;
-        }
-        .audio-player audio {
-            width: 100%;
-            height: 40px;
-            border-radius: 28px;
-        }
-        .audio-note {
-            font-size: 10px;
-            color: #8EA79A;
-            margin-top: 8px;
-        }
         @media (max-width: 768px) {
             .sidebar {
                 max-height: 48%;
@@ -634,7 +543,6 @@
             .exhibition-item { width: 140px; }
             .exhibition-info { font-size: 9px; padding: 6px 8px; }
             .story-textarea { font-size: 13px; padding: 10px 14px; }
-            .voice-btn { width: 38px; height: 38px; font-size: 16px; }
             .outline-btn { font-size: 10px; padding: 6px 2px; white-space: normal; }
             .float-controls { bottom: 8px; padding: 5px 12px; gap: 6px; }
             .btn { padding: 5px 10px; font-size: 10px; }
@@ -655,8 +563,6 @@
                 font-size: 9px;
                 padding: 6px 10px;
             }
-            .audio-controls { flex-direction: column; align-items: stretch; }
-            .record-btn { justify-content: center; }
         }
         @media (max-width: 480px) {
             .exhibition-item { width: 120px; }
@@ -751,8 +657,8 @@
             • 双击积木 → 顺时针旋转45°<br>
             • 双指/滚轮缩放，单指拖拽背景平移<br>
             • 点击「提交」上传作品（需在白名单内）<br>
-            • 可录制音频故事（最长60秒）<br>
-            • 下方画展横向滑动，点击图片可查看大图与故事
+            • 下方画展横向滑动，点击图片可查看大图与故事<br>
+            • 仅显示最近30条作品记录
         </div>
     </div>
 </div>
@@ -781,27 +687,14 @@
             <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">🖼️ 作品名称</label>
             <input type="text" id="workNameInput" placeholder="给作品起个名字吧" maxlength="30" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
         </div>
-        <!-- 语音故事区域 -->
-        <div class="audio-group">
-            <div class="audio-title">🎙️ 语音故事 (选填，直接录音)</div>
-            <div class="audio-controls">
-                <button id="startRecordBtn" class="record-btn">🎤 开始录音</button>
-                <button id="stopRecordBtn" class="record-btn" disabled>⏹️ 停止录音</button>
-            </div>
-            <div id="audioPlayerContainer" class="audio-player" style="display: none;">
-                <audio id="audioPlayer" controls></audio>
-            </div>
-            <div id="audioStatus" class="audio-note">录音最长60秒，完成后可预览</div>
-        </div>
         <!-- 作品故事文字输入区域 -->
         <div style="margin-bottom:15px; text-align:left;">
             <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📖 作品故事 (选填，文字)</label>
             <div class="story-input-wrapper">
                 <textarea id="storyInput" rows="3" class="story-textarea" placeholder="描述你的创作灵感、拼搭故事..."></textarea>
-                <button id="voiceBtn" class="voice-btn" type="button">🎤</button>
             </div>
             <div id="voiceNote" class="voice-note"></div>
-            <div class="voice-tip">💡 语音转文字请用浏览器打开，并允许开启麦克风。如无法使用请手动输入。</div>
+            <div class="voice-tip">💡 可在此输入作品背后的创意灵感或拼搭心得</div>
         </div>
         <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
             <button id="modalCancelBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#EFF2EF; color:#4A5E52; cursor:pointer;">取消</button>
@@ -812,10 +705,10 @@
 </div>
 <script>
     (function(){
-        // ---------- API 地址 (已全部更新至新地址) ----------
-        const QUICKFORM_API = "https://quickform.cn/api/khqye61vvi";                // 作品提交接口
-        const QUICKFORM_ALL_API = "https://quickform.cn/api/khqye61vvi/all";        // 画展数据接口
-        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口（保持不变）
+        // ---------- API 地址 ----------
+        const QUICKFORM_API = "https://wzkjgz.site/api/09jzsin3vr";                // 作品提交接口 (已按要求修改)
+        const QUICKFORM_ALL_API = "https://wzkjgz.site/api/09jzsin3vr/all";        // 画展数据接口（获取所有提交作品） (已按要求修改)
+        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口
         
         // ---------- 轮廓库 (完整27种) ----------
         const fullMasterShapes = [
@@ -858,13 +751,6 @@
         const studentName = document.getElementById('studentName');
         const workNameInput = document.getElementById('workNameInput');
         const storyInput = document.getElementById('storyInput');
-        const voiceBtn = document.getElementById('voiceBtn');
-        const voiceNote = document.getElementById('voiceNote');
-        const startRecordBtn = document.getElementById('startRecordBtn');
-        const stopRecordBtn = document.getElementById('stopRecordBtn');
-        const audioPlayerContainer = document.getElementById('audioPlayerContainer');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const audioStatus = document.getElementById('audioStatus');
         const modalCancel = document.getElementById('modalCancelBtn');
         const modalConfirm = document.getElementById('modalConfirmBtn');
         const submitStatus = document.getElementById('submitStatus');
@@ -884,13 +770,6 @@
         const SNAP_THRESHOLD = 24, INIT_POS = { x: 0, y: 150 };
         let isSidebarHidden = false;
         
-        // 录音相关变量（修复版）
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let recordedAudioBlob = null;
-        let isRecording = false;
-        let currentStream = null;
-        
         // 隐藏/显示侧边栏
         function toggleSidebar() {
             isSidebarHidden = !isSidebarHidden;
@@ -904,272 +783,54 @@
         }
         toggleSidebarBtn.addEventListener('click', toggleSidebar);
         
-        // 语音转文字
-        let recognition = null;
-        let isListening = false;
-        function initSpeechRecognition() {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                voiceBtn.disabled = true;
-                voiceBtn.classList.add('disabled');
-                voiceNote.innerText = '❌ 您的浏览器不支持语音识别，请手动输入';
-                return false;
-            }
-            const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-            if (!isSecure) {
-                voiceNote.innerText = '⚠️ 请使用 http://localhost 或 https 访问，否则无法语音输入';
-                voiceBtn.disabled = true;
-                voiceBtn.classList.add('disabled');
-                return false;
-            }
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'zh-CN';
-            recognition.maxAlternatives = 1;
-            recognition.onstart = function() { isListening = true; voiceBtn.classList.add('active'); voiceNote.innerText = '🎙️ 正在聆听...'; };
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                const current = storyInput.value;
-                storyInput.value = current + (current ? '\n' : '') + transcript;
-                voiceNote.innerText = '✅ 语音输入成功！';
-                setTimeout(() => { if (voiceNote.innerText === '✅ 语音输入成功！') voiceNote.innerText = ''; }, 2000);
-            };
-            recognition.onerror = function(event) {
-                let msg = '';
-                switch(event.error) {
-                    case 'not-allowed': msg = '❌ 未获得麦克风权限，请允许麦克风'; break;
-                    case 'no-speech': msg = '❌ 未检测到语音'; break;
-                    default: msg = `❌ 识别失败 (${event.error})`;
-                }
-                voiceNote.innerText = msg;
-                setTimeout(() => { if (voiceNote.innerText === msg) voiceNote.innerText = ''; }, 4000);
-                voiceBtn.classList.remove('active');
-                isListening = false;
-            };
-            recognition.onend = function() { isListening = false; voiceBtn.classList.remove('active'); };
-            return true;
-        }
-        async function requestMicrophonePermission() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                voiceNote.innerText = '⚠️ 浏览器不支持麦克风';
-                return false;
-            }
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                stream.getTracks().forEach(track => track.stop());
-                voiceNote.innerText = '✅ 麦克风权限已获取';
-                setTimeout(() => { if (voiceNote.innerText === '✅ 麦克风权限已获取') voiceNote.innerText = ''; }, 2000);
-                return true;
-            } catch (err) {
-                voiceNote.innerText = '❌ 无法获取麦克风权限';
-                return false;
-            }
-        }
-        voiceBtn.addEventListener('click', async () => {
-            if (!recognition) { if (!initSpeechRecognition()) return; }
-            if (isListening) { recognition.stop(); return; }
-            await requestMicrophonePermission();
-            try { recognition.start(); } catch(e) { voiceNote.innerText = '❌ 启动失败'; }
-        });
-        initSpeechRecognition();
-        
-        // 获取支持的音频 MIME 类型
-        function getSupportedMimeType() {
-            const types = ['audio/webm', 'audio/mp4', 'audio/ogg', 'audio/wav'];
-            for (let type of types) {
-                if (MediaRecorder.isTypeSupported(type)) {
-                    return type;
-                }
-            }
-            return '';
-        }
-        
-        // 录音功能（修复版）
-        async function startRecording() {
-            if (isRecording) {
-                audioStatus.innerText = '⚠️ 正在录音中，请先停止';
-                return;
-            }
-            // 重置状态
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                try { mediaRecorder.stop(); } catch(e) {}
-            }
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-                currentStream = null;
-            }
-            audioChunks = [];
-            recordedAudioBlob = null;
-            audioPlayerContainer.style.display = 'none';
-            audioPlayer.src = '';
-            
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                currentStream = stream;
-                const mimeType = getSupportedMimeType();
-                const options = mimeType ? { mimeType: mimeType } : {};
-                mediaRecorder = new MediaRecorder(stream, options);
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data && event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-                mediaRecorder.onstop = () => {
-                    if (audioChunks.length === 0) {
-                        audioStatus.innerText = '❌ 录音失败，未捕获到音频数据。请检查麦克风并重试。';
-                        isRecording = false;
-                        startRecordBtn.disabled = false;
-                        stopRecordBtn.disabled = true;
-                        startRecordBtn.classList.remove('recording');
-                        if (currentStream) {
-                            currentStream.getTracks().forEach(track => track.stop());
-                            currentStream = null;
-                        }
-                        return;
-                    }
-                    const blobType = mimeType || 'audio/webm';
-                    const audioBlob = new Blob(audioChunks, { type: blobType });
-                    recordedAudioBlob = audioBlob;
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    audioPlayer.src = audioUrl;
-                    audioPlayerContainer.style.display = 'block';
-                    audioStatus.innerText = '✅ 录音完成，可预览。最长60秒。';
-                    isRecording = false;
-                    startRecordBtn.disabled = false;
-                    stopRecordBtn.disabled = true;
-                    startRecordBtn.classList.remove('recording');
-                    if (currentStream) {
-                        currentStream.getTracks().forEach(track => track.stop());
-                        currentStream = null;
-                    }
-                };
-                mediaRecorder.onerror = (err) => {
-                    console.error('MediaRecorder错误:', err);
-                    audioStatus.innerText = '❌ 录音出错，请重试';
-                    isRecording = false;
-                    startRecordBtn.disabled = false;
-                    stopRecordBtn.disabled = true;
-                    startRecordBtn.classList.remove('recording');
-                    if (currentStream) {
-                        currentStream.getTracks().forEach(track => track.stop());
-                        currentStream = null;
-                    }
-                };
-                mediaRecorder.start(); // 不传 timeslice，一次停止时获取所有数据
-                isRecording = true;
-                startRecordBtn.disabled = true;
-                stopRecordBtn.disabled = false;
-                startRecordBtn.classList.add('recording');
-                audioStatus.innerText = '🔴 录音中... 最长60秒';
-                // 60秒自动停止
-                setTimeout(() => {
-                    if (isRecording && mediaRecorder && mediaRecorder.state === 'recording') {
-                        stopRecording();
-                    }
-                }, 60000);
-            } catch (err) {
-                console.error('录音启动失败:', err);
-                let errorMsg = '❌ 无法录音，请检查麦克风权限';
-                if (err.name === 'NotAllowedError') errorMsg = '❌ 未获得麦克风权限，请允许后重试';
-                else if (err.name === 'NotFoundError') errorMsg = '❌ 未找到麦克风设备';
-                audioStatus.innerText = errorMsg;
-                startRecordBtn.disabled = false;
-                if (currentStream) {
-                    currentStream.getTracks().forEach(track => track.stop());
-                    currentStream = null;
-                }
-            }
-        }
-        
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-                audioStatus.innerText = '⏹️ 正在处理录音...';
-            } else {
-                audioStatus.innerText = '没有正在进行的录音';
-                startRecordBtn.disabled = false;
-                stopRecordBtn.disabled = true;
-                startRecordBtn.classList.remove('recording');
-                isRecording = false;
-            }
-        }
-        
-        startRecordBtn.addEventListener('click', startRecording);
-        stopRecordBtn.addEventListener('click', stopRecording);
-        
-        // ---------- 画展数据加载 (适配新接口) ----------
+        // 加载画展（只显示最近30条）
         async function loadExhibitionData(){
-            exhibitionLoading.style.display='flex'; 
-            exhibitionGrid.style.display='none'; 
-            exhibitionEmpty.style.display='none';
+            exhibitionLoading.style.display='flex'; exhibitionGrid.style.display='none'; exhibitionEmpty.style.display='none';
             try{
-                const resp = await fetch(QUICKFORM_ALL_API);
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const data = await resp.json();
-                // 适配新接口的数据结构：新增的 submissions 字段
-                let submissions = data.submissions || [];
-                if (!Array.isArray(submissions)) {
-                    submissions = [];
-                }
-                if (submissions.length === 0) {
-                    exhibitionLoading.style.display='none';
-                    exhibitionEmpty.style.display='block';
-                    return;
-                }
-                // 按创建时间倒序排列
-                submissions.sort((a,b) => (b.createdAt || b.timestamp || 0) - (a.createdAt || a.timestamp || 0));
-                exhibitionLoading.style.display='none';
-                exhibitionGrid.style.display='inline-flex';
-                exhibitionGrid.innerHTML = '';
-                submissions.forEach(item => {
-                    let imgUrl = item.image || item.screenshot || item.img || item.picture || (item.data && item.data.image);
-                    if (!imgUrl && item.base64 && item.base64.startsWith('data:image')) imgUrl = item.base64;
-                    if (!imgUrl) return;
+                const resp=await fetch(QUICKFORM_ALL_API);
+                if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+                const data=await resp.json();
+                let subs=[];
+                if(Array.isArray(data)) subs=data;
+                else if(data&&Array.isArray(data.submissions)) subs=data.submissions;
+                else if(data&&Array.isArray(data.data)) subs=data.data;
+                else if(data&&data.records) subs=data.records;
+                else subs=[];
+                if(subs.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; return; }
+                // 按时间倒序排序（最新的在前）
+                subs.sort((a,b)=>(b.createdAt||b.timestamp||0)-(a.createdAt||a.timestamp||0));
+                // 只保留最近30条
+                const recentSubs = subs.slice(0, 30);
+                exhibitionLoading.style.display='none'; exhibitionGrid.style.display='inline-flex'; exhibitionGrid.innerHTML='';
+                recentSubs.forEach(item=>{
+                    let imgUrl=item.image||item.screenshot||item.img||item.picture||(item.data&&item.data.image);
+                    if(!imgUrl&&item.base64&&item.base64.startsWith('data:image')) imgUrl=item.base64;
+                    if(!imgUrl) return;
                     const className = item.class || item.className || '未知班级';
                     const authorName = item.name || item.studentName || '匿名';
                     const workTitle = item.workName || '无标题';
                     const story = item.story || '';
                     const storyPreview = story.length > 40 ? story.substring(0,40)+'…' : story;
-                    const div = document.createElement('div'); 
-                    div.className = 'exhibition-item';
-                    const imgDiv = document.createElement('div'); 
-                    imgDiv.className = 'exhibition-img';
-                    const img = document.createElement('img'); 
-                    img.src = imgUrl;
-                    img.alt = workTitle;
+                    const div=document.createElement('div'); div.className='exhibition-item';
+                    const imgDiv=document.createElement('div'); imgDiv.className='exhibition-img';
+                    const img=document.createElement('img'); img.src=imgUrl;
+                    img.alt=workTitle;
                     imgDiv.appendChild(img);
-                    const infoDiv = document.createElement('div'); 
-                    infoDiv.className = 'exhibition-info';
-                    infoDiv.innerHTML = `<div class="class-name">${escapeHtml(className)}</div><div>${escapeHtml(authorName)}</div><div class="work-title">《${escapeHtml(workTitle)}》</div>${storyPreview ? `<div class="story-preview">📖 ${escapeHtml(storyPreview)}</div>` : ''}`;
+                    const infoDiv=document.createElement('div'); infoDiv.className='exhibition-info';
+                    infoDiv.innerHTML=`<div class="class-name">${escapeHtml(className)}</div><div>${escapeHtml(authorName)}</div><div class="work-title">《${escapeHtml(workTitle)}》</div>${storyPreview ? `<div class="story-preview">📖 ${escapeHtml(storyPreview)}</div>` : ''}`;
                     div.appendChild(imgDiv);
                     div.appendChild(infoDiv);
-                    div.addEventListener('click', () => {
-                        previewImage.src = imgUrl;
+                    div.addEventListener('click',()=>{
+                        previewImage.src=imgUrl;
                         previewStory.innerHTML = `<strong>📖 作品故事</strong><br>${escapeHtml(story) || '暂无故事描述'}`;
-                        previewModal.style.display = 'flex';
+                        previewModal.style.display='flex';
                     });
                     exhibitionGrid.appendChild(div);
                 });
-                if (exhibitionGrid.children.length === 0) {
-                    exhibitionLoading.style.display = 'none';
-                    exhibitionEmpty.style.display = 'block';
-                }
-            } catch(err) { 
-                console.error('加载画展失败:', err); 
-                exhibitionLoading.style.display = 'none'; 
-                exhibitionEmpty.style.display = 'block'; 
-            }
+                if(exhibitionGrid.children.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
+            }catch(err){ console.error(err); exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
         }
-        
-        function escapeHtml(str){ 
-            return String(str).replace(/[&<>]/g, function(m){
-                if(m==='&') return '&amp;'; 
-                if(m==='<') return '&lt;'; 
-                if(m==='>') return '&gt;'; 
-                return m;
-            }); 
-        }
+        function escapeHtml(str){ return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
         previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
         previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
         
@@ -1237,7 +898,7 @@
         function renderButtons(shapes){ outlineContainer.innerHTML=''; shapes.forEach(s=>{ let btn=document.createElement('button'); btn.className='outline-btn'; if(currentOutlineKey===s.key) btn.classList.add('active'); btn.setAttribute('data-key',s.key); btn.innerText=s.name; btn.addEventListener('click',()=>setOutline(s.key,s.svg)); outlineContainer.appendChild(btn); }); }
         function refreshGallery(){ currentNineShapes=getRandomNine(); renderButtons(currentNineShapes); if(!currentNineShapes.some(s=>s.key===currentOutlineKey)){ currentOutlineKey=null; document.querySelectorAll('.outline-btn').forEach(btn=>btn.classList.remove('active')); } }
         
-        // 截图居中生成
+        // 截图居中生成 (压缩版：尺寸600x600，JPEG质量0.7)
         async function generateCenteredScreenshot() {
             const ns = "http://www.w3.org/2000/svg";
             let allPoints = [];
@@ -1258,7 +919,7 @@
                 const ctx = canvas.getContext("2d");
                 ctx.fillStyle = "#FCFAF2";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
-                return canvas.toDataURL("image/png");
+                return canvas.toDataURL("image/jpeg", 0.7);
             }
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             for (let p of allPoints) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
@@ -1294,7 +955,7 @@
             const img = new Image();
             await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
             const canvas = document.createElement("canvas");
-            const targetSize = 800;
+            const targetSize = 600;   // 从800降至600，大幅减小体积
             const scale = targetSize / Math.max(viewW, viewH);
             canvas.width = targetSize; canvas.height = targetSize;
             const ctx = canvas.getContext("2d");
@@ -1303,21 +964,14 @@
             const offsetX = (targetSize - drawW) / 2, offsetY = (targetSize - drawH) / 2;
             ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
             URL.revokeObjectURL(url);
-            return canvas.toDataURL("image/png");
+            // 使用 JPEG 格式 0.7 质量压缩，比 PNG 小 5~10 倍
+            return canvas.toDataURL("image/jpeg", 0.7);
         }
         
-        // 提交作品 (白名单验证 + 截图 + 录音文件，适配新接口)
+        // 提交作品
         async function submitWork(){
             submitModal.style.display='flex'; submitStatus.style.display='none'; 
             studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
-            recordedAudioBlob = null;
-            audioPlayerContainer.style.display = 'none';
-            audioPlayer.src = '';
-            audioStatus.innerText = '录音最长60秒，完成后可预览';
-            startRecordBtn.disabled = false;
-            stopRecordBtn.disabled = true;
-            if (mediaRecorder && mediaRecorder.state === 'recording') stopRecording();
-            if (currentStream) { currentStream.getTracks().forEach(track => track.stop()); currentStream = null; }
             
             const confirmHandler = async () => {
                 const className = classSelect.value;
@@ -1338,7 +992,7 @@
                 
                 submitModal.style.display = 'none';
                 submitStatus.style.display = 'block';
-                submitStatus.innerText = '⏳ 正在生成作品截图...';
+                submitStatus.innerText = '⏳ 正在生成作品截图并压缩...';
                 const imgBase64 = await generateCenteredScreenshot();
                 if (!imgBase64) { submitStatus.innerText = '❌ 截图失败，请重试'; setTimeout(()=>{ submitStatus.style.display='none'; },2000); return; }
                 submitStatus.innerText = '📤 正在上传至 QuickForm...';
@@ -1350,20 +1004,13 @@
                 formData.append('image', imgBase64);
                 formData.append('timestamp', new Date().toISOString());
                 if (currentOutlineKey) formData.append('outline', currentOutlineKey);
-                if (recordedAudioBlob) {
-                    formData.append('audio', recordedAudioBlob, 'story.webm');
-                }
                 try {
-                    // 使用新的提交接口
                     const resp = await fetch(QUICKFORM_API, { method: 'POST', body: formData });
                     if (resp.ok) {
                         submitStatus.innerText = '✅ 作品提交成功！老师将很快看到你的拼图。';
                         setTimeout(()=>{ submitStatus.style.display='none'; },3000);
                         studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
-                        recordedAudioBlob = null;
-                        audioPlayerContainer.style.display = 'none';
-                        audioPlayer.src = '';
-                        loadExhibitionData(); // 重新加载画展
+                        loadExhibitionData();
                     } else {
                         const errText = await resp.text();
                         console.error('提交失败', errText);
