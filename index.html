@@ -1696,7 +1696,13 @@
                     }, 300);
                     toastMsg(`✅ 拼合正确！+1 (共 ${examCount} 组)`, 'success');
                 } else {
+                    // 非答题模式：显示成功消息，等待1秒后自动换题
                     toastMsg("✅ 拼合正确：外轮廓与目标轮廓重合", "success");
+                    if (autoTimer) clearTimeout(autoTimer);
+                    autoTimer = setTimeout(() => {
+                        generateNewPuzzle(false);
+                        autoTimer = null;
+                    }, 1000);
                 }
             }
 
