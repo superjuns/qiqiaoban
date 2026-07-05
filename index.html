@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>七巧板 · 灵韵工坊 | 白名单验证</title>
+    <title>七巧板拼图</title>
     <style>
         * {
             margin: 0;
@@ -13,7 +13,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         body {
-            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Microsoft YaHei', sans-serif;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
             background: #EFF3F0;
             height: 100vh;
             width: 100vw;
@@ -24,7 +24,7 @@
             display: flex;
             width: 100%;
             height: 100%;
-            flex-direction: row;
+            flex-direction: column;
             transition: all 0.3s ease;
         }
         .canvas-area {
@@ -35,277 +35,45 @@
             background-size: 28px 28px;
             overflow: hidden;
             touch-action: none;
+            padding-top: 50px;
+            min-height: 0;
         }
-        .sidebar {
-            width: 320px;
-            background: #FFFFFF;
-            display: flex;
-            flex-direction: column;
-            border-left: 1px solid #E2E8E6;
-            box-shadow: -4px 0 20px rgba(0,0,0,0.03);
-            z-index: 10;
-            overflow-y: auto;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-        @media (max-width: 768px) {
-            .app {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                max-height: 48%;
-                border-left: none;
-                border-top: 1px solid #E2E8E6;
-                box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
-                order: 2;
-                transition: max-height 0.3s ease, opacity 0.3s ease;
-            }
-            .canvas-area {
-                order: 1;
-                min-height: 52%;
-            }
-            .sidebar.hide {
-                max-height: 0;
-                opacity: 0;
-                overflow: hidden;
-                padding: 0;
-                border-top: none;
-            }
-        }
-        .sidebar.hide {
-            width: 0;
-            opacity: 0;
-            overflow: hidden;
-            padding: 0;
-            border-left: none;
-        }
-        .sidebar-header {
-            padding: 16px 16px 10px;
-            font-weight: 600;
-            font-size: 16px;
-            color: #1E3A2F;
-            border-bottom: 2px solid #F0F3EF;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .exhibition-section {
-            background: #FCFAF2;
-            padding: 12px 0;
-            border-bottom: 1px solid #ECF0EC;
-        }
-        .exhibition-title {
-            font-weight: 600;
-            font-size: 15px;
-            color: #1E3A2F;
-            margin: 0 16px 12px 16px;
-            padding-bottom: 6px;
-            border-bottom: 2px solid #FF8C42;
-            display: inline-block;
-        }
-        .exhibition-scroll {
-            overflow-x: auto;
-            overflow-y: hidden;
-            white-space: nowrap;
-            scrollbar-width: thin;
-            -webkit-overflow-scrolling: touch;
-            padding: 0 12px 8px 12px;
-        }
-        .exhibition-grid {
-            display: inline-flex;
-            gap: 12px;
-            white-space: nowrap;
-        }
-        .exhibition-item {
-            width: 160px;
-            background: #FFFFFF;
-            border-radius: 16px;
-            border: 2px solid #E9EDE8;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-            display: inline-flex;
-            flex-direction: column;
-            flex-shrink: 0;
-        }
-        .exhibition-item:hover {
-            transform: translateY(-4px);
-            border-color: #FF8C42;
-            box-shadow: 0 12px 20px -8px rgba(0,0,0,0.15);
-        }
-        .exhibition-img {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #F8F9F7;
-            overflow: hidden;
-        }
-        .exhibition-img img {
-            width: 90%;
-            height: 90%;
-            object-fit: contain;
-        }
-        .exhibition-info {
-            padding: 8px 10px;
-            font-size: 10px;
-            line-height: 1.4;
-            color: #5A6E64;
-            text-align: left;
-            background: #FEFEF9;
-            border-top: 1px solid #F0F2EF;
-            white-space: normal;
-            word-break: break-word;
-        }
-        .exhibition-info .class-name {
-            font-weight: 600;
-            color: #2C5A45;
-        }
-        .exhibition-info .work-title {
-            font-style: italic;
-            color: #FF8C42;
-            margin: 2px 0;
-        }
-        .exhibition-info .story-preview {
-            font-size: 9px;
-            color: #7C8F82;
-            margin-top: 4px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        .exhibition-loading, .exhibition-empty {
-            text-align: center;
-            padding: 20px 12px;
-            color: #8EA79A;
-            font-size: 13px;
-            white-space: normal;
-        }
-        .exhibition-loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-        .loader {
-            width: 30px;
-            height: 30px;
-            border: 3px solid #E9EDE8;
-            border-top: 3px solid #FF8C42;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .gallery-section {
-            padding: 12px 16px;
-            border-top: 1px solid #ECF0EC;
-            border-bottom: 1px solid #ECF0EC;
-            background: #FEFEF9;
-        }
-        .gallery-title {
-            font-weight: 600;
-            font-size: 14px;
-            color: #2A5E48;
-            margin-bottom: 10px;
+        .global-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: rgba(74, 122, 108, 0.95);
+            backdrop-filter: blur(8px);
+            color: white;
+            font-size: 20px;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 6px;
+            padding: 0 20px;
+            z-index: 40;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, sans-serif;
+            pointer-events: none;
         }
-        .refresh-btn {
-            background: #EFF2EF;
-            border: none;
-            border-radius: 30px;
-            padding: 5px 12px;
-            font-size: 12px;
-            cursor: pointer;
-            color: #3B6E58;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+        .header-title {
+            pointer-events: none;
         }
-        .refresh-btn:active { background: #DCE4DD; transform: scale(0.96); }
-        .outline-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .outline-btn {
-            background: #F0F4EF;
-            border: 1px solid #D0DDD4;
-            padding: 8px 4px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-            color: #3B6E58;
-            text-align: center;
-            white-space: nowrap;
-            overflow-x: hidden;
-            text-overflow: ellipsis;
-            touch-action: manipulation;
-        }
-        .outline-btn.active {
-            background: #FF8C42;
-            border-color: #FF8C42;
-            color: white;
-            box-shadow: 0 2px 8px rgba(255,140,66,0.3);
-        }
-        .outline-btn:active { background: #E5E9E2; transform: scale(0.96); }
-        .clear-outline-btn {
-            background: #EFF2EF;
-            border: none;
-            border-radius: 40px;
-            padding: 8px 16px;
-            font-size: 12px;
-            cursor: pointer;
-            color: #7C8F82;
-            width: 100%;
-            margin-top: 8px;
-        }
-        .top-controls {
-            position: absolute;
-            top: 12px;
-            right: 12px;
+        .header-stats {
             display: flex;
-            gap: 10px;
-            z-index: 30;
-            background: rgba(255,255,245,0.8);
-            backdrop-filter: blur(8px);
-            padding: 6px 12px;
-            border-radius: 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .top-btn {
-            background: white;
-            border: none;
-            border-radius: 30px;
-            padding: 6px 12px;
-            font-size: 14px;
+            gap: 20px;
+            font-size: 16px;
             font-weight: 500;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #2C5A45;
-            transition: 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            pointer-events: none;
         }
-        .top-btn:active {
-            transform: scale(0.96);
-            background: #FF8C42;
-            color: white;
-        }
-        .top-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
+        .header-stats span {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 4px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(4px);
         }
         .float-controls {
             position: absolute;
@@ -314,14 +82,63 @@
             transform: translateX(-50%);
             display: flex;
             gap: 8px;
-            background: rgba(255,255,245,0.95);
+            background: rgba(255, 255, 245, 0.95);
             backdrop-filter: blur(12px);
             padding: 6px 16px;
             border-radius: 60px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             z-index: 20;
             border: 1px solid #DFE7E2;
-            white-space: nowrap;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn {
+            border: none;
+            padding: 8px 14px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-success { background: #4A7A6C;
+            color: white; }
+        .btn-success:active { background: #2C5A45; }
+        .btn-generate {
+            background: #FF8C42;
+            color: white;
+        }
+        .btn-generate:active {
+            transform: scale(0.96);
+            background: #E07030;
+        }
+        .btn-outline { background: white;
+            color: #2C5A45;
+            border: 1px solid #D0DCD4; }
+        .btn-outline:active { background: #F0F5F0; }
+        .btn-exam {
+            background: #9B59B6;
+            color: white;
+        }
+        .btn-exam:active {
+            background: #7D3C98;
+        }
+        .btn-exam.active {
+            background: #E67E22;
+        }
+        .btn-skip {
+            background: #3498DB;
+            color: white;
+        }
+        .btn-skip:active {
+            background: #2E86C1;
         }
         .zoom-panel {
             position: absolute;
@@ -343,113 +160,27 @@
             font-size: 24px;
             font-weight: 500;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             transition: 0.2s;
             color: #2C5A45;
             border: 1px solid #E2E9E4;
             touch-action: manipulation;
         }
-        .zoom-btn:active { background: #FF8C42; color: white; transform: scale(0.94); }
+        .zoom-btn:active { background: #FF8C42;
+            color: white;
+            transform: scale(0.94); }
         .zoom-info {
             position: absolute;
             right: 18px;
             bottom: 58px;
             font-size: 11px;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
             padding: 4px 8px;
             border-radius: 20px;
             color: white;
             font-weight: 500;
-        }
-        .btn {
-            border: none;
-            padding: 8px 14px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-            background: white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            touch-action: manipulation;
-        }
-        .btn:active { transform: scale(0.96); }
-        .btn-primary { background: #FF8C42; color: white; box-shadow: 0 4px 10px rgba(255,140,66,0.3); }
-        .btn-outline { border: 1px solid #C0CDC4; background: white; }
-        .preview-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.85);
-            z-index: 1100;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(8px);
-        }
-        .preview-content {
-            max-width: 90vw;
-            max-height: 90vh;
-            position: relative;
-            background: #fff;
-            border-radius: 24px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        .preview-content img {
-            width: 100%;
-            height: auto;
-            max-height: 60vh;
-            object-fit: contain;
-            background: #FCFAF2;
-        }
-        .preview-story {
-            padding: 16px 20px;
-            background: white;
-            color: #2C5A45;
-            font-size: 14px;
-            line-height: 1.5;
-            max-height: 30vh;
-            overflow-y: auto;
-            border-top: 1px solid #F0F2EF;
-        }
-        .preview-story strong {
-            color: #FF8C42;
-        }
-        .preview-close {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            background: rgba(0,0,0,0.6);
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            transition: 0.2s;
-            z-index: 2;
-        }
-        .preview-close:hover { background: #FF8C42; transform: scale(1.05); }
-        .info-tip {
-            margin: 12px 16px 16px;
-            font-size: 11px;
-            background: #F5F7F4;
-            border-radius: 16px;
-            padding: 10px;
-            color: #4A5E52;
-            line-height: 1.4;
-            border-left: 3px solid #FF8C42;
+            z-index: 20;
         }
         svg {
             display: block;
@@ -458,599 +189,1780 @@
             cursor: grab;
             touch-action: none;
         }
-        svg:active { cursor: grabbing; }
-        .draggable-group { cursor: grab; pointer-events: auto; touch-action: none; }
+        .draggable-group {
+            cursor: grab;
+            pointer-events: auto;
+            touch-action: none;
+        }
         .piece {
             stroke: #2C4D3A;
             stroke-width: 3.2;
             stroke-linejoin: round;
             transition: stroke 0.15s, stroke-width 0.1s;
-            filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.12));
+            filter: drop-shadow(2px 3px 4px rgba(0, 0, 0, 0.12));
         }
         .piece.selected {
             stroke: #FF7F2A;
             stroke-width: 5.5;
-            filter: drop-shadow(0 0 8px rgba(255,127,42,0.6));
+            filter: drop-shadow(0 0 8px rgba(255, 127, 42, 0.6));
         }
         .label {
             pointer-events: none;
-            font-size: 24px;
-            font-weight: bold;
-            fill: #2E3B32;
+            font-size: 26px;
+            font-weight: 700;
+            fill: #1E2E26;
             font-family: 'Segoe UI', 'PingFang SC', monospace;
             text-anchor: middle;
             dominant-baseline: middle;
-            text-shadow: 0 1px 0 rgba(255,255,200,0.6);
+            text-shadow: 0 1px 2px rgba(255, 255, 200, 0.7);
+            opacity: 0.85;
         }
-        .outline-layer { pointer-events: none; }
-        .outline-shape {
-            fill: rgba(110,140,120,0.12);
-            stroke: #4F7B67;
-            stroke-width: 3;
+        .piece-outline-exposed {
+            fill: none;
+            stroke: #E07030;
+            stroke-width: 2.5;
             stroke-dasharray: 8 5;
-            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.1));
+            pointer-events: none;
+            opacity: 0.75;
         }
-        /* 美化故事文本框区域 */
-        .story-input-wrapper {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-top: 5px;
-        }
-        .story-textarea {
-            flex: 1;
-            border: 1.5px solid #E2E9E4;
-            border-radius: 24px;
-            padding: 12px 16px;
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1E3A2F;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            display: none;
             font-size: 14px;
-            line-height: 1.5;
-            background: #FFFFFF;
-            outline: none;
-            resize: vertical;
-            font-family: inherit;
-            transition: all 0.2s ease;
-            color: #2C4D3A;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-        .story-textarea:focus {
-            border-color: #FF8C42;
-            box-shadow: 0 0 0 3px rgba(255,140,66,0.15);
-        }
-        .story-textarea::placeholder {
-            color: #BECDC2;
-            font-weight: 400;
-        }
-        .voice-note {
-            font-size: 10px;
-            color: #8EA79A;
-            margin-top: 6px;
-            padding-left: 4px;
-        }
-        .voice-tip {
-            font-size: 10px;
-            color: #FF8C42;
-            background: #FFF3E6;
-            padding: 8px 12px;
-            border-radius: 24px;
-            margin-top: 10px;
+            max-width: 90%;
             text-align: center;
+        }
+        .toast.success { background: #4A7A6C; }
+        .toast.fail { background: #D9534F; }
+        .toast.hint { background: #FFC107;
+            color: #1E3A2F; }
+        .toast.info { background: #2C5A45; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: white;
+            border-radius: 24px;
+            padding: 32px 40px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+        .modal-box h2 {
+            margin-bottom: 20px;
+            color: #1E3A2F;
+        }
+        .modal-box label {
             display: block;
+            text-align: left;
+            font-weight: 600;
+            margin: 12px 0 4px;
+            color: #2C5A45;
         }
+        .modal-box select, .modal-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #D0DCD4;
+            font-size: 16px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .modal-box select:focus, .modal-box input:focus {
+            border-color: #4A7A6C;
+        }
+        .modal-box .btn-start {
+            margin-top: 24px;
+            background: #4A7A6C;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .modal-box .btn-start:hover {
+            background: #2C5A45;
+        }
+        .modal-box .btn-start:active {
+            transform: scale(0.96);
+        }
+        .modal-box .btn-close {
+            margin-top: 12px;
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+        /* 排行榜 */
+        .rank-area {
+            height: 200px;
+            background: white;
+            border-top: 2px solid #E2E8E6;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+        .rank-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 20px;
+            background: #F8FAF8;
+            border-bottom: 1px solid #E2E8E6;
+            flex-shrink: 0;
+        }
+        .rank-header h3 {
+            font-size: 16px;
+            color: #1E3A2F;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rank-header .rank-refresh {
+            background: none;
+            border: none;
+            color: #4A7A6C;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: #EFF3F0;
+            transition: 0.2s;
+        }
+        .rank-header .rank-refresh:active {
+            transform: scale(0.95);
+            background: #D9E0DA;
+        }
+        .rank-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #FCFCFC;
+            transition: background 0.15s;
+        }
+        .rank-item:nth-child(1) { background: #FFF8E7; }
+        .rank-item:nth-child(2) { background: #F5F5F5; }
+        .rank-item:nth-child(3) { background: #FDF0E6; }
+        .rank-item .rank-pos {
+            font-weight: 700;
+            color: #888;
+            width: 30px;
+            text-align: right;
+        }
+        .rank-item .rank-name {
+            flex: 1;
+            padding: 0 12px;
+            font-weight: 500;
+            color: #1E3A2F;
+        }
+        .rank-item .rank-class {
+            color: #666;
+            font-size: 13px;
+            margin-right: 12px;
+        }
+        .rank-item .rank-score {
+            font-weight: 700;
+            color: #4A7A6C;
+        }
+        .rank-empty {
+            text-align: center;
+            color: #999;
+            padding: 20px 0;
+            font-size: 14px;
+        }
+        .rank-loading {
+            text-align: center;
+            color: #888;
+            padding: 20px 0;
+            font-size: 14px;
+        }
+
         @media (max-width: 768px) {
-            .sidebar {
-                max-height: 48%;
-            }
-            .exhibition-item { width: 140px; }
-            .exhibition-info { font-size: 9px; padding: 6px 8px; }
-            .story-textarea { font-size: 13px; padding: 10px 14px; }
-            .outline-btn { font-size: 10px; padding: 6px 2px; white-space: normal; }
-            .float-controls { bottom: 8px; padding: 5px 12px; gap: 6px; }
-            .btn { padding: 5px 10px; font-size: 10px; }
-            .zoom-panel { right: 8px; bottom: 70px; gap: 8px; }
-            .zoom-btn { width: 38px; height: 38px; font-size: 20px; }
-            .zoom-info { right: 12px; bottom: 38px; font-size: 10px; }
-            .label { font-size: 18px; }
-            .top-controls {
-                top: 8px;
-                right: 8px;
-                padding: 4px 10px;
-            }
-            .top-btn {
-                padding: 4px 10px;
-                font-size: 12px;
-            }
-            .voice-tip {
-                font-size: 9px;
-                padding: 6px 10px;
-            }
-        }
-        @media (max-width: 480px) {
-            .exhibition-item { width: 120px; }
-            .exhibition-info { font-size: 8px; }
-            .story-textarea { font-size: 12px; padding: 8px 12px; }
-            .outline-btn { font-size: 9px; padding: 5px 1px; }
-            .btn { padding: 4px 8px; font-size: 9px; }
-            .voice-tip {
-                font-size: 8px;
-                padding: 5px 8px;
-            }
+            .rank-area { height: 160px; }
+            .rank-item { font-size: 13px; }
         }
     </style>
 </head>
 <body>
-<div class="app">
-    <div class="canvas-area" id="canvasArea">
-        <div class="top-controls">
-            <button id="toggleSidebarBtn" class="top-btn" title="隐藏/显示侧边栏">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5h4v14h-4V5zM5 5h8v14H5V5z"/></svg>
-                隐藏侧边栏
-            </button>
-        </div>
-        <svg id="mainSvg" viewBox="0 0 1200 800" style="touch-action: none;">
-            <g id="viewportGroup">
-                <g id="outlineGroup" class="outline-layer"></g>
-                <g id="piecesGroup">
-                    <g class="draggable-group" id="piece1">
-                        <polygon class="piece" fill="rgba(239,83,59,0.72)" points="0,0 200,200 0,400" />
-                        <text x="65" y="210" class="label">1</text>
-                    </g>
-                    <g class="draggable-group" id="piece2">
-                        <polygon class="piece" fill="rgba(255,193,7,0.75)" points="0,0 400,0 200,200" />
-                        <text x="200" y="80" class="label">2</text>
-                    </g>
-                    <g class="draggable-group" id="piece3">
-                        <polygon class="piece" fill="rgba(76,175,80,0.7)" points="400,0 300,100 400,200" />
-                        <text x="360" y="105" class="label">3</text>
-                    </g>
-                    <g class="draggable-group" id="piece4">
-                        <polygon class="piece" fill="rgba(33,150,243,0.68)" points="200,200 300,100 400,200 300,300" />
-                        <text x="305" y="210" class="label">4</text>
-                    </g>
-                    <g class="draggable-group" id="piece5">
-                        <polygon class="piece" fill="rgba(255,152,0,0.72)" points="200,200 300,300 100,300" />
-                        <text x="190" y="275" class="label">5</text>
-                    </g>
-                    <g class="draggable-group" id="piece6">
-                        <polygon class="piece" fill="rgba(156,39,176,0.68)" points="0,400 200,400 300,300 100,300" />
-                        <text x="140" y="375" class="label">6</text>
-                    </g>
-                    <g class="draggable-group" id="piece7">
-                        <polygon class="piece" fill="rgba(0,188,212,0.7)" points="200,400 400,400 400,200" />
-                        <text x="335" y="350" class="label">7</text>
-                    </g>
+    <div class="app">
+        <div class="canvas-area" id="canvasArea">
+            <div class="global-header">
+                <span class="header-title">🧩 七巧板拼图</span>
+                <div class="header-stats" id="headerStats">
+                    <span id="timerDisplay">⏱️ 02:00</span>
+                    <span id="countDisplay">✅ 0</span>
+                </div>
+            </div>
+
+            <svg id="mainSvg" viewBox="0 0 1200 800" style="touch-action: none;">
+                <g id="viewportGroup">
+                    <g id="outlineLayer"></g>
+                    <g id="piecesGroup"></g>
                 </g>
-            </g>
-        </svg>
-        <div class="zoom-panel">
-            <div class="zoom-btn" id="zoomInBtn">+</div>
-            <div class="zoom-btn" id="zoomOutBtn">−</div>
-            <div class="zoom-btn" id="resetViewBtn">⟲</div>
-        </div>
-        <div class="zoom-info" id="zoomLevel">100%</div>
-        <div class="float-controls">
-            <button class="btn btn-outline" id="resetPosBtn">⟳ 重置</button>
-            <button class="btn btn-outline" id="rotateLeftBtn">↺ -45</button>
-            <button class="btn btn-outline" id="rotateRightBtn">↻ +45</button>
-            <button class="btn btn-outline" id="flipBtn">🪞</button>
-            <button class="btn btn-primary" id="submitBtn" style="background:#4A7A6C; box-shadow:none;">📤 提交</button>
-        </div>
-    </div>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">✨ 灵感画展</div>
-        <div class="exhibition-section">
-            <div class="exhibition-title">🎨 同学作品集</div>
-            <div class="exhibition-scroll" id="exhibitionScroll">
-                <div id="exhibitionGrid" class="exhibition-grid"></div>
-                <div id="exhibitionLoading" class="exhibition-loading" style="display: none;"><div class="loader"></div><span>加载作品中...</span></div>
-                <div id="exhibitionEmpty" class="exhibition-empty" style="display: none;">✨ 暂无作品，快来提交第一个吧！</div>
+            </svg>
+
+            <div class="zoom-panel">
+                <div class="zoom-btn" id="zoomInBtn">+</div>
+                <div class="zoom-btn" id="zoomOutBtn">−</div>
+                <div class="zoom-btn" id="resetViewBtn">⟲</div>
+            </div>
+            <div class="zoom-info" id="zoomLevel">100%</div>
+
+            <div class="float-controls">
+                <button class="btn btn-outline" id="resetPosBtn">⟳ 重置</button>
+                <button class="btn btn-outline" id="rotateLeftBtn">↺ -45</button>
+                <button class="btn btn-outline" id="rotateRightBtn">↻ +45</button>
+                <button class="btn btn-outline" id="flipBtn">🪞 翻转</button>
+                <button class="btn btn-success" id="submitBtn">📤 验证拼图</button>
+                <button class="btn btn-generate" id="generateBtn">🔄 更换</button>
+                <button class="btn btn-exam" id="examBtn">📝 答题模式</button>
             </div>
         </div>
-        <div class="gallery-section">
-            <div class="gallery-title"><span>🧩 参考轮廓库</span><button id="refreshGalleryBtn" class="refresh-btn">🔄 换一组</button></div>
-            <div id="outlineButtonsContainer" class="outline-buttons"></div>
-            <button id="clearOutlineBtn" class="clear-outline-btn">🗑️ 隐藏轮廓</button>
-            <div style="font-size:10px; color:#8EA79A; margin-top:8px;">💡 点击轮廓，积木顶点自动吸附边界！「换一组」随机9个新图形。</div>
-        </div>
-        <div class="info-tip">
-            🧩 触屏操作指南<br>
-            • 单指拖拽积木，<b>自动吸附轮廓/积木</b><br>
-            • 双击积木 → 顺时针旋转45°<br>
-            • 双指/滚轮缩放，单指拖拽背景平移<br>
-            • 点击「提交」上传作品（需在白名单内）<br>
-            • 下方画展横向滑动，点击图片可查看大图与故事<br>
-            • 仅显示最近30条作品记录
+
+        <!-- 排行榜 -->
+        <div class="rank-area" id="rankArea">
+            <div class="rank-header">
+                <h3>🏆 今日排行榜</h3>
+                <button class="rank-refresh" id="rankRefreshBtn">🔄 刷新</button>
+            </div>
+            <div class="rank-list" id="rankList">
+                <div class="rank-loading">加载中...</div>
+            </div>
         </div>
     </div>
-</div>
-<div id="previewModal" class="preview-modal">
-    <div class="preview-content">
-        <div class="preview-close" id="previewCloseBtn">✕</div>
-        <img id="previewImage" src="" alt="作品预览">
-        <div id="previewStory" class="preview-story"></div>
-    </div>
-</div>
-<div id="submitModal" class="modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:1000; justify-content:center; align-items:center; backdrop-filter:blur(3px);">
-    <div style="background:white; border-radius:32px; width:90%; max-width:450px; padding:24px 20px 28px; box-shadow:0 20px 35px rgba(0,0,0,0.2); text-align:center; max-height:85vh; overflow-y:auto;">
-        <div style="font-size:20px; font-weight:700; color:#1E3A2F; margin-bottom:18px;">✏️ 提交作品</div>
-        <div style="margin-bottom:15px; text-align:left;">
-            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📌 班级</label>
-            <select id="classSelect" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
-                <option value="1班">1班</option><option value="2班">2班</option><option value="3班">3班</option><option value="4班">4班</option>
-                <option value="5班">5班</option><option value="6班">6班</option><option value="7班">7班</option>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="examModal">
+        <div class="modal-box">
+            <h2>📝 答题模式</h2>
+            <label>班级</label>
+            <select id="classSelect">
+                <option value="1">1班</option>
+                <option value="2">2班</option>
+                <option value="3">3班</option>
+                <option value="4">4班</option>
+                <option value="5">5班</option>
+                <option value="6">6班</option>
+                <option value="7">7班</option>
             </select>
+            <label>姓名</label>
+            <input type="text" id="nameInput" placeholder="请输入您的姓名" maxlength="20">
+            <button class="btn-start" id="startExamBtn">开始答题</button>
+            <button class="btn-close" id="closeModalBtn">取消</button>
         </div>
-        <div style="margin-bottom:15px; text-align:left;">
-            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">👤 姓名</label>
-            <input type="text" id="studentName" placeholder="请输入真实姓名" maxlength="20" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
-        </div>
-        <div style="margin-bottom:15px; text-align:left;">
-            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">🖼️ 作品名称</label>
-            <input type="text" id="workNameInput" placeholder="给作品起个名字吧" maxlength="30" style="width:100%; padding:12px 14px; border:1.5px solid #D9E0DC; border-radius:28px; font-size:15px; background:#FEFEF9; outline:none;">
-        </div>
-        <!-- 作品故事文字输入区域 -->
-        <div style="margin-bottom:15px; text-align:left;">
-            <label style="display:block; font-size:14px; font-weight:600; color:#2C5A45; margin-bottom:6px;">📖 作品故事 (选填，文字)</label>
-            <div class="story-input-wrapper">
-                <textarea id="storyInput" rows="3" class="story-textarea" placeholder="描述你的创作灵感、拼搭故事..."></textarea>
-            </div>
-            <div id="voiceNote" class="voice-note"></div>
-            <div class="voice-tip">💡 可在此输入作品背后的创意灵感或拼搭心得</div>
-        </div>
-        <div style="display:flex; gap:12px; justify-content:center; margin-top:20px;">
-            <button id="modalCancelBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#EFF2EF; color:#4A5E52; cursor:pointer;">取消</button>
-            <button id="modalConfirmBtn" style="padding:10px 20px; border-radius:40px; font-weight:600; font-size:14px; border:none; background:#FF8C42; color:white; cursor:pointer;">确认提交</button>
-        </div>
-        <div id="submitStatus" style="font-size:12px; color:#FF8C42; margin-top:12px; text-align:center; display:none;"></div>
     </div>
-</div>
-<script>
-    (function(){
-        // ---------- API 地址 ----------
-        const QUICKFORM_API = "https://wzkjgz.site/api/09jzsin3vr";                // 作品提交接口 (已按要求修改)
-        const QUICKFORM_ALL_API = "https://wzkjgz.site/api/09jzsin3vr/all";        // 画展数据接口（获取所有提交作品） (已按要求修改)
-        const WHITELIST_ALL_API = "https://quickform.cn/api/5tmbx2o6rg/all";        // 白名单数据接口
-        
-        // ---------- 轮廓库 (完整27种) ----------
-        const fullMasterShapes = [
-            { key: "boat", name: "⛵ 帆船", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 430,510 L 770,510 L 700,580 L 500,580 Z" /><path d="M 590,380 L 690,490 L 590,490 Z" /><line x1="590" y1="380" x2="590" y2="510" /></svg>` },
-            { key: "fish", name: "🐟 小鱼", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 460,370 C 520,300 680,320 740,390 C 680,460 520,460 460,370 Z" /><path d="M 730,380 L 790,350 L 780,420 L 730,400 Z" /><circle cx="510" cy="365" r="8" /></svg>` },
-            { key: "house", name: "🏠 小屋", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 450,430 L 730,430 L 730,630 L 450,630 Z" /><path d="M 430,430 L 590,320 L 750,430 Z" /><rect x="555" y="530" width="50" height="70" /></svg>` },
-            { key: "swan", name: "🦢 天鹅", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 480,420 C 480,340 560,300 640,340 C 700,370 720,430 700,470 C 680,500 620,520 580,510 C 550,500 530,470 520,440 Z" /><path d="M 480,420 C 440,390 400,380 380,410 C 370,430 390,440 400,430 C 410,420 440,420 480,420 Z" /></svg>` },
-            { key: "rocket", name: "🚀 火箭", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 560,260 L 640,260 L 660,380 L 540,380 Z" /><path d="M 540,380 L 660,380 L 640,480 L 560,480 Z" /><path d="M 580,480 L 600,530 L 620,480 Z" /><polygon points="600,260 580,210 620,210" /><rect x="585" y="380" width="30" height="40" /></svg>` },
-            { key: "tree", name: "🌲 松树", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 590,600 L 590,520 L 560,520 L 600,460 L 640,520 L 610,520 L 610,600 Z" /><rect x="580" y="600" width="40" height="40" /><path d="M 590,460 L 610,460 L 610,380 L 590,380 Z" /></svg>` },
-            { key: "cat", name: "🐱 小猫", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 520,440 C 500,420 480,380 510,360 C 530,340 560,350 570,370 C 580,350 610,340 630,360 C 660,380 640,420 620,440 Z" /><path d="M 520,440 L 500,490 L 540,480 Z" /><path d="M 620,440 L 640,490 L 600,480 Z" /><circle cx="540" cy="390" r="10" /><circle cx="600" cy="390" r="10" /></svg>` },
-            { key: "teapot", name: "🍵 茶壶", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="470" rx="90" ry="70" /><path d="M 600,400 L 600,340 C 600,320 620,310 640,320 L 650,350" /><path d="M 540,430 C 500,430 470,450 470,480 C 470,510 500,520 540,520" /><path d="M 690,440 L 730,430 L 730,480 Z" /><ellipse cx="600" cy="525" rx="45" ry="15" /></svg>` },
-            { key: "plane", name: "✈️ 飞机", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 540,420 L 660,380 L 680,370 L 660,430 Z" /><path d="M 580,440 L 620,480 L 620,520 L 580,480 Z" /><path d="M 620,480 L 680,510 L 680,540 L 620,520 Z" /><path d="M 520,460 L 580,440 L 540,400 Z" /><rect x="600" y="390" width="20" height="60" /></svg>` },
-            { key: "rabbit", name: "🐇 兔子", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="580" cy="470" rx="70" ry="60" /><circle cx="540" cy="390" r="18" /><circle cx="620" cy="390" r="18" /><path d="M 540,390 L 500,340 L 520,380 Z" /><path d="M 620,390 L 660,340 L 640,380 Z" /><circle cx="555" cy="455" r="6" /><circle cx="605" cy="455" r="6" /></svg>` },
-            { key: "bird", name: "🐦 小鸟", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 500,410 C 520,360 580,340 630,370 C 660,390 680,430 650,460 C 620,480 560,470 520,450 Z" /><path d="M 630,370 L 700,320 L 680,360 Z" /><circle cx="540" cy="400" r="6" /></svg>` },
-            { key: "butterfly", name: "🦋 蝴蝶", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 600,480 C 560,420 500,430 480,460 C 460,490 480,540 520,550 C 560,560 590,520 600,500 Z" /><path d="M 600,480 C 640,420 700,430 720,460 C 740,490 720,540 680,550 C 640,560 610,520 600,500 Z" /><ellipse cx="600" cy="480" rx="12" ry="25" /></svg>` },
-            { key: "flower", name: "🌼 花朵", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><circle cx="600" cy="460" r="35" /><circle cx="600" cy="390" r="30" /><circle cx="535" cy="425" r="30" /><circle cx="665" cy="425" r="30" /><circle cx="550" cy="500" r="30" /><circle cx="650" cy="500" r="30" /><rect x="585" y="520" width="30" height="60" /></svg>` },
-            { key: "mushroom", name: "🍄 蘑菇", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 520,480 C 520,400 680,400 680,480 Z" /><rect x="540" y="480" width="120" height="50" rx="8" /><circle cx="570" cy="440" r="12" /><circle cx="630" cy="440" r="12" /><circle cx="600" cy="460" r="14" /></svg>` },
-            { key: "snail", name: "🐌 蜗牛", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="500" rx="70" ry="40" /><path d="M 550,480 C 500,450 480,400 510,380 C 540,360 580,390 580,430" /><circle cx="510" cy="385" r="12" /><circle cx="500" cy="380" r="4" /></svg>` },
-            { key: "sun", name: "☀️ 太阳", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><circle cx="600" cy="460" r="55" /><line x1="600" y1="380" x2="600" y2="340" stroke-width="6" /><line x1="600" y1="540" x2="600" y2="580" stroke-width="6" /><line x1="520" y1="460" x2="480" y2="460" stroke-width="6" /><line x1="680" y1="460" x2="720" y2="460" stroke-width="6" /><line x1="544" y1="404" x2="516" y2="376" stroke-width="6" /><line x1="656" y1="404" x2="684" y2="376" stroke-width="6" /><line x1="544" y1="516" x2="516" y2="544" stroke-width="6" /><line x1="656" y1="516" x2="684" y2="544" stroke-width="6" /></svg>` },
-            { key: "moon", name: "🌙 月亮", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 620,420 C 580,400 530,440 540,500 C 550,560 620,580 670,540 C 620,540 590,500 600,450 C 605,430 615,425 620,420 Z" /></svg>` },
-            { key: "star", name: "⭐ 星星", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><polygon points="600,360 615,410 670,410 625,440 640,490 600,465 560,490 575,440 530,410 585,410" /></svg>` },
-            { key: "heart", name: "❤️ 心形", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><path d="M 600,540 C 480,480 450,400 520,370 C 560,350 580,380 600,400 C 620,380 640,350 680,370 C 750,400 720,480 600,540 Z" /></svg>` },
-            { key: "diamond", name: "🔷 菱形", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><polygon points="600,350 700,460 600,570 500,460" /></svg>` },
-            { key: "parallelogram", name: "🔶 平行四边形", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><polygon points="520,400 680,400 620,520 460,520" /></svg>` },
-            { key: "turtle", name: "🐢 乌龟", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="500" rx="80" ry="50" /><circle cx="510" cy="490" r="16" /><circle cx="690" cy="490" r="16" /><ellipse cx="600" cy="520" rx="30" ry="15" /><path d="M 540,530 L 520,560 L 560,540 Z" /><path d="M 660,530 L 680,560 L 640,540 Z" /></svg>` },
-            { key: "owl", name: "🦉 猫头鹰", svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><ellipse cx="600" cy="460" rx="70" ry="80" /><circle cx="560" cy="430" r="18" /><circle cx="640" cy="430" r="18" /><circle cx="560" cy="430" r="8" fill="#2C4D3A" /><circle cx="640" cy="430" r="8" fill="#2C4D3A" /><path d="M 570,480 L 630,480 L 600,510 Z" /><path d="M 520,420 L 540,390 L 560,420 Z" /><path d="M 680,420 L 660,390 L 640,420 Z" /></svg>` }
-        ];
-        let currentNineShapes = [], currentOutlineKey = null, outlinePoints = [];
-        const svgElem = document.getElementById('mainSvg');
-        const viewportGroup = document.getElementById('viewportGroup');
-        const outlineGroup = document.getElementById('outlineGroup');
-        const piecesGroup = document.getElementById('piecesGroup');
-        const groups = document.querySelectorAll('.draggable-group');
-        const zoomSpan = document.getElementById('zoomLevel');
-        const outlineContainer = document.getElementById('outlineButtonsContainer');
-        const refreshBtn = document.getElementById('refreshGalleryBtn');
-        const clearOutlineBtn = document.getElementById('clearOutlineBtn');
-        const submitModal = document.getElementById('submitModal');
-        const classSelect = document.getElementById('classSelect');
-        const studentName = document.getElementById('studentName');
-        const workNameInput = document.getElementById('workNameInput');
-        const storyInput = document.getElementById('storyInput');
-        const modalCancel = document.getElementById('modalCancelBtn');
-        const modalConfirm = document.getElementById('modalConfirmBtn');
-        const submitStatus = document.getElementById('submitStatus');
-        const submitBtn = document.getElementById('submitBtn');
-        const exhibitionGrid = document.getElementById('exhibitionGrid');
-        const exhibitionLoading = document.getElementById('exhibitionLoading');
-        const exhibitionEmpty = document.getElementById('exhibitionEmpty');
-        const previewModal = document.getElementById('previewModal');
-        const previewImage = document.getElementById('previewImage');
-        const previewStory = document.getElementById('previewStory');
-        const previewClose = document.getElementById('previewCloseBtn');
-        const sidebar = document.getElementById('sidebar');
-        const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
-        
-        let transforms = {}, selectedGroup = null, activeElement = null, dragOffset = {x:0,y:0}, isDragging = false;
-        let isPanning = false, panAnchor = {x:0,y:0}, viewScale = 1, viewTranslate = {x:0,y:0}, lastClickTime = 0;
-        const SNAP_THRESHOLD = 24, INIT_POS = { x: 0, y: 150 };
-        let isSidebarHidden = false;
-        
-        // 隐藏/显示侧边栏
-        function toggleSidebar() {
-            isSidebarHidden = !isSidebarHidden;
-            if (isSidebarHidden) {
-                sidebar.classList.add('hide');
-                toggleSidebarBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 5h4v14H9V5zM5 5h2v14H5V5zM17 5h2v14h-2V5z"/></svg> 显示侧边栏';
-            } else {
-                sidebar.classList.remove('hide');
-                toggleSidebarBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><path d="M15 5h4v14h-4V5zM5 5h8v14H5V5z"/></svg> 隐藏侧边栏';
-            }
-        }
-        toggleSidebarBtn.addEventListener('click', toggleSidebar);
-        
-        // 加载画展（只显示最近30条）
-        async function loadExhibitionData(){
-            exhibitionLoading.style.display='flex'; exhibitionGrid.style.display='none'; exhibitionEmpty.style.display='none';
-            try{
-                const resp=await fetch(QUICKFORM_ALL_API);
-                if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
-                const data=await resp.json();
-                let subs=[];
-                if(Array.isArray(data)) subs=data;
-                else if(data&&Array.isArray(data.submissions)) subs=data.submissions;
-                else if(data&&Array.isArray(data.data)) subs=data.data;
-                else if(data&&data.records) subs=data.records;
-                else subs=[];
-                if(subs.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; return; }
-                // 按时间倒序排序（最新的在前）
-                subs.sort((a,b)=>(b.createdAt||b.timestamp||0)-(a.createdAt||a.timestamp||0));
-                // 只保留最近30条
-                const recentSubs = subs.slice(0, 30);
-                exhibitionLoading.style.display='none'; exhibitionGrid.style.display='inline-flex'; exhibitionGrid.innerHTML='';
-                recentSubs.forEach(item=>{
-                    let imgUrl=item.image||item.screenshot||item.img||item.picture||(item.data&&item.data.image);
-                    if(!imgUrl&&item.base64&&item.base64.startsWith('data:image')) imgUrl=item.base64;
-                    if(!imgUrl) return;
-                    const className = item.class || item.className || '未知班级';
-                    const authorName = item.name || item.studentName || '匿名';
-                    const workTitle = item.workName || '无标题';
-                    const story = item.story || '';
-                    const storyPreview = story.length > 40 ? story.substring(0,40)+'…' : story;
-                    const div=document.createElement('div'); div.className='exhibition-item';
-                    const imgDiv=document.createElement('div'); imgDiv.className='exhibition-img';
-                    const img=document.createElement('img'); img.src=imgUrl;
-                    img.alt=workTitle;
-                    imgDiv.appendChild(img);
-                    const infoDiv=document.createElement('div'); infoDiv.className='exhibition-info';
-                    infoDiv.innerHTML=`<div class="class-name">${escapeHtml(className)}</div><div>${escapeHtml(authorName)}</div><div class="work-title">《${escapeHtml(workTitle)}》</div>${storyPreview ? `<div class="story-preview">📖 ${escapeHtml(storyPreview)}</div>` : ''}`;
-                    div.appendChild(imgDiv);
-                    div.appendChild(infoDiv);
-                    div.addEventListener('click',()=>{
-                        previewImage.src=imgUrl;
-                        previewStory.innerHTML = `<strong>📖 作品故事</strong><br>${escapeHtml(story) || '暂无故事描述'}`;
-                        previewModal.style.display='flex';
-                    });
-                    exhibitionGrid.appendChild(div);
-                });
-                if(exhibitionGrid.children.length===0){ exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
-            }catch(err){ console.error(err); exhibitionLoading.style.display='none'; exhibitionEmpty.style.display='block'; }
-        }
-        function escapeHtml(str){ return String(str).replace(/[&<>]/g, function(m){if(m==='&') return '&amp;'; if(m==='<') return '&lt;'; if(m==='>') return '&gt;'; return m;}); }
-        previewClose.onclick=()=>{ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; };
-        previewModal.onclick=(e)=>{ if(e.target===previewModal){ previewModal.style.display='none'; previewImage.src=''; previewStory.innerHTML=''; } };
-        
-        // 白名单验证
-        let whitelistCache = null;
-        async function checkWhitelist(className, studentName) {
-            try {
-                if (!whitelistCache) {
-                    const response = await fetch(WHITELIST_ALL_API);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
-                    whitelistCache = data.submissions || data.data || [];
-                    if (!Array.isArray(whitelistCache)) whitelistCache = [];
+
+    <div id="toastMessage" class="toast"></div>
+
+    <script>
+        (function() {
+            // ---------- 1. 七巧板积木定义 ----------
+            const PIECE_DEFS = {
+                p1: { pts: "0,0 200,200 0,400", fill: "rgba(102, 204, 204, 0.85)" },
+                p2: { pts: "0,0 400,0 200,200", fill: "rgba(204, 153, 102, 0.85)" },
+                p3: { pts: "400,0 300,100 400,200", fill: "rgba(102, 204, 102, 0.85)" },
+                p4: { pts: "200,200 300,100 400,200 300,300", fill: "rgba(204, 51, 51, 0.85)" },
+                p5: { pts: "200,200 300,300 100,300", fill: "rgba(204, 204, 51, 0.85)" },
+                p6: { pts: "0,400 200,400 300,300 100,300", fill: "rgba(51, 102, 204, 0.85)" },
+                p7: { pts: "200,400 400,400 400,200", fill: "rgba(153, 51, 204, 0.85)" }
+            };
+            const PIECE_IDS = Object.keys(PIECE_DEFS);
+            const PIECE_NUMBERS = { p1: '1', p2: '2', p3: '3', p4: '4', p5: '5', p6: '6', p7: '7' };
+
+            function getEdges(pointsStr) {
+                const pts = pointsStr.split(' ').map(p => p.split(',').map(Number));
+                const edges = [];
+                for (let i = 0; i < pts.length; i++) {
+                    const j = (i + 1) % pts.length;
+                    const x1 = pts[i][0],
+                        y1 = pts[i][1];
+                    const x2 = pts[j][0],
+                        y2 = pts[j][1];
+                    const dx = x2 - x1,
+                        dy = y2 - y1;
+                    const len = Math.hypot(dx, dy);
+                    edges.push({ x1, y1, x2, y2, dx, dy, len, index: i });
                 }
-                const matched = whitelistCache.some(entry => {
-                    const entryClass = entry.class || entry.className || '';
-                    const entryName = entry.name || entry.studentName || '';
-                    return entryClass === className && entryName === studentName;
-                });
-                if (matched) return { allowed: true, message: '验证通过' };
-                else return { allowed: false, message: '您不在白名单内，无法提交作品。请联系老师添加。' };
-            } catch (err) {
-                console.error('白名单验证失败:', err);
-                return { allowed: false, message: '白名单验证服务异常，请稍后重试' };
+                return edges;
             }
-        }
-        
-        // ----- 坐标转换与吸附（核心，完整保留）-----
-        function getSVGPoint(cx,cy){ let pt=svgElem.createSVGPoint(); pt.x=cx; pt.y=cy; let ctm=svgElem.getScreenCTM(); return ctm?pt.matrixTransform(ctm.inverse()):pt; }
-        function getGlobalMousePos(evt){ let cx,cy; if(evt.touches){ cx=evt.touches[0].clientX; cy=evt.touches[0].clientY; }else{ cx=evt.clientX; cy=evt.clientY; } return getSVGPoint(cx,cy); }
-        function getLocalPos(evt){ let g=getGlobalMousePos(evt); return { x:(g.x-viewTranslate.x)/viewScale, y:(g.y-viewTranslate.y)/viewScale }; }
-        function updateTransform(g){ let t=transforms[g.id]; if(!t) return; let poly=g.querySelector('polygon'); let bbox=poly.getBBox(); let cx=bbox.x+bbox.width/2, cy=bbox.y+bbox.height/2; let flipX=t.flip===-1? -2*cx:0; g.setAttribute('transform',`translate(${t.x},${t.y}) rotate(${t.rotate},${cx},${cy}) scale(${t.flip},1) translate(${flipX},0)`); }
-        function updateViewport(){ viewportGroup.setAttribute('transform',`translate(${viewTranslate.x},${viewTranslate.y}) scale(${viewScale})`); zoomSpan.innerText=Math.round(viewScale*100)+'%'; }
-        function getTransformedVertices(g,overridePos=null){ let t=transforms[g.id]; if(!t) return []; let px=overridePos?overridePos.x:t.x, py=overridePos?overridePos.y:t.y; let rot=t.rotate, flip=t.flip; let poly=g.querySelector('polygon'); let pts=poly.points; let bbox=poly.getBBox(); let cx=bbox.x+bbox.width/2, cy=bbox.y+bbox.height/2; let verts=[]; for(let i=0;i<pts.numberOfItems;i++){ let p=pts.getItem(i); let x=p.x, y=p.y; if(flip===-1) x=2*cx-x; let rad=rot*Math.PI/180; let rx=cx+(x-cx)*Math.cos(rad)-(y-cy)*Math.sin(rad); let ry=cy+(x-cx)*Math.sin(rad)+(y-cy)*Math.cos(rad); verts.push({x:rx+px, y:ry+py}); } return verts; }
-        function getOutlineSnapOffset(verts){ if(!outlinePoints.length) return null; let best={dx:0,dy:0,dist:SNAP_THRESHOLD}; for(let v of verts) for(let op of outlinePoints){ let dx=op.x-v.x, dy=op.y-v.y, d=Math.hypot(dx,dy); if(d<best.dist){ best.dist=d; best.dx=dx; best.dy=dy; } } return best.dist<SNAP_THRESHOLD?{dx:best.dx,dy:best.dy}:null; }
-        function getInterPieceSnapOffset(g,tx,ty){ let verts=getTransformedVertices(g,{x:tx,y:ty}); let best={dx:0,dy:0,dist:SNAP_THRESHOLD}; for(let other of groups){ if(other===g) continue; let oVerts=getTransformedVertices(other,null); for(let v1 of verts) for(let v2 of oVerts){ let dx=v2.x-v1.x, dy=v2.y-v1.y, d=Math.hypot(dx,dy); if(d<best.dist){ best.dist=d; best.dx=dx; best.dy=dy; } } } return best.dist<SNAP_THRESHOLD?{dx:best.dx,dy:best.dy}:null; }
-        function applySmartSnap(g,tx,ty){ let piece=getInterPieceSnapOffset(g,tx,ty); let outline=getOutlineSnapOffset(getTransformedVertices(g,{x:tx,y:ty})); let dx=0,dy=0; if(piece&&outline){ let dp=Math.hypot(piece.dx,piece.dy), do_=Math.hypot(outline.dx,outline.dy); if(dp<=do_){ dx=piece.dx; dy=piece.dy; }else{ dx=outline.dx; dy=outline.dy; } }else if(piece){ dx=piece.dx; dy=piece.dy; }else if(outline){ dx=outline.dx; dy=outline.dy; } if(dx!==0||dy!==0) return {x:tx+dx, y:ty+dy}; return {x:tx,y:ty}; }
-        function startDrag(evt){ evt.preventDefault(); evt.stopPropagation(); let target=evt.currentTarget; if(!target) return; let now=Date.now(); if(now-lastClickTime<280){ rotatePiece(target,45); lastClickTime=0; return; } lastClickTime=now; groups.forEach(g=>g.querySelector('.piece').classList.remove('selected')); target.querySelector('.piece').classList.add('selected'); selectedGroup=target; activeElement=target; piecesGroup.appendChild(target); let local=getLocalPos(evt); let cur=transforms[target.id]; dragOffset.x=local.x-cur.x; dragOffset.y=local.y-cur.y; isDragging=true; window.addEventListener('mousemove',onDragMove); window.addEventListener('mouseup',onDragEnd); window.addEventListener('touchmove',onDragMove,{passive:false}); window.addEventListener('touchend',onDragEnd); }
-        function onDragMove(evt){ if(!isDragging||!selectedGroup) return; evt.preventDefault(); let local=getLocalPos(evt); let nx=local.x-dragOffset.x, ny=local.y-dragOffset.y; let snapped=applySmartSnap(selectedGroup,nx,ny); transforms[selectedGroup.id].x=snapped.x; transforms[selectedGroup.id].y=snapped.y; updateTransform(selectedGroup); }
-        function onDragEnd(){ isDragging=false; selectedGroup=null; window.removeEventListener('mousemove',onDragMove); window.removeEventListener('mouseup',onDragEnd); window.removeEventListener('touchmove',onDragMove); window.removeEventListener('touchend',onDragEnd); }
-        function startPan(evt){ if(evt.target.closest&&evt.target.closest('.draggable-group')) return; isPanning=true; let mouse=getGlobalMousePos(evt); panAnchor={x:mouse.x-viewTranslate.x, y:mouse.y-viewTranslate.y}; window.addEventListener('mousemove',onPanMove); window.addEventListener('mouseup',onPanEnd); window.addEventListener('touchmove',onPanMove,{passive:false}); window.addEventListener('touchend',onPanEnd); }
-        function onPanMove(evt){ if(!isPanning) return; evt.preventDefault(); let mouse=getGlobalMousePos(evt); viewTranslate.x=mouse.x-panAnchor.x; viewTranslate.y=mouse.y-panAnchor.y; updateViewport(); }
-        function onPanEnd(){ isPanning=false; window.removeEventListener('mousemove',onPanMove); window.removeEventListener('mouseup',onPanEnd); window.removeEventListener('touchmove',onPanMove); window.removeEventListener('touchend',onPanEnd); }
-        function handleWheel(evt){ evt.preventDefault(); let delta=evt.deltaY>0?0.92:1.08; let mouse=getGlobalMousePos(evt); let old=viewScale; let ns=viewScale*delta; ns=Math.min(3.2,Math.max(0.3,ns)); if(ns===old) return; viewTranslate.x=mouse.x-(mouse.x-viewTranslate.x)*(ns/old); viewTranslate.y=mouse.y-(mouse.y-viewTranslate.y)*(ns/old); viewScale=ns; updateViewport(); }
-        function changeZoom(f){ let ns=viewScale*f; ns=Math.min(3.2,Math.max(0.3,ns)); if(ns===viewScale) return; let c={x:600,y:400}; viewTranslate.x=c.x-(c.x-viewTranslate.x)*(ns/viewScale); viewTranslate.y=c.y-(c.y-viewTranslate.y)*(ns/viewScale); viewScale=ns; updateViewport(); }
-        function resetView(){ viewScale=1; viewTranslate={x:0,y:0}; updateViewport(); }
-        function rotatePiece(p,a){ if(!p) return; transforms[p.id].rotate=(transforms[p.id].rotate+a)%360; updateTransform(p); }
-        function rotateSelected(a){ if(activeElement) rotatePiece(activeElement,a); else alert('请先点选积木'); }
-        function flipSelected(){ if(activeElement){ transforms[activeElement.id].flip*=-1; updateTransform(activeElement); } else alert('请先选中积木'); }
-        function resetAllPositions(){ groups.forEach(g=>{ transforms[g.id]={x:INIT_POS.x,y:INIT_POS.y,rotate:0,flip:1}; g.querySelector('.piece').classList.remove('selected'); updateTransform(g); }); activeElement=null; selectedGroup=null; resetView(); }
-        function clearSelectionOnBg(evt){ if(evt.target===svgElem||evt.target===viewportGroup||!evt.target.closest('.draggable-group')){ groups.forEach(g=>g.querySelector('.piece').classList.remove('selected')); activeElement=null; selectedGroup=null; } }
-        
-        // 轮廓渲染
-        function clearOutline(){ while(outlineGroup.firstChild) outlineGroup.removeChild(outlineGroup.firstChild); outlinePoints=[]; currentOutlineKey=null; document.querySelectorAll('.outline-btn').forEach(btn=>btn.classList.remove('active')); }
-        function collectPoints(el){ let pts=[]; if(el.nodeType===1){ if(el.tagName==='path'&&el.getAttribute('d')){ try{ let p=document.createElementNS("http://www.w3.org/2000/svg","path"); p.setAttribute('d',el.getAttribute('d')); let len=p.getTotalLength(); for(let d=0;d<=len;d+=6) pts.push(p.getPointAtLength(d)); }catch(e){} }
-            else if(el.tagName==='polygon'&&el.getAttribute('points')){ let parts=el.getAttribute('points').trim().split(/[\s,]+/); for(let i=0;i<parts.length;i+=2) pts.push({x:parseFloat(parts[i]),y:parseFloat(parts[i+1])}); }
-            else if(el.tagName==='rect'){ let x=parseFloat(el.getAttribute('x')), y=parseFloat(el.getAttribute('y')), w=parseFloat(el.getAttribute('width')), h=parseFloat(el.getAttribute('height')); if(!isNaN(x)) pts.push({x,y},{x:x+w,y},{x:x+w,y:y+h},{x,y:y+h}); }
-            else if(el.tagName==='circle'){ let cx=parseFloat(el.getAttribute('cx')), cy=parseFloat(el.getAttribute('cy')), r=parseFloat(el.getAttribute('r')); if(!isNaN(cx)) for(let a=0;a<360;a+=15) pts.push({x:cx+r*Math.cos(a*Math.PI/180), y:cy+r*Math.sin(a*Math.PI/180)}); }
-            else if(el.tagName==='ellipse'){ let cx=parseFloat(el.getAttribute('cx')), cy=parseFloat(el.getAttribute('cy')), rx=parseFloat(el.getAttribute('rx')), ry=parseFloat(el.getAttribute('ry')); if(!isNaN(cx)) for(let a=0;a<360;a+=15) pts.push({x:cx+rx*Math.cos(a*Math.PI/180), y:cy+ry*Math.sin(a*Math.PI/180)}); }
-            else if(el.tagName==='line'){ let x1=parseFloat(el.getAttribute('x1')), y1=parseFloat(el.getAttribute('y1')), x2=parseFloat(el.getAttribute('x2')), y2=parseFloat(el.getAttribute('y2')); if(!isNaN(x1)) pts.push({x:x1,y:y1},{x:x2,y:y2}); }
-            for(let child of el.children) pts.push(...collectPoints(child)); } return pts; }
-        function renderSVGOutline(svgStr){ clearOutline(); let parser=new DOMParser(); let doc=parser.parseFromString(svgStr,"image/svg+xml"); let root=doc.documentElement; if(!root||root.tagName!=='svg') throw new Error("无效SVG"); let styleNode=function(node){ if(node.nodeType===1){ node.classList.add('outline-shape'); node.setAttribute('fill','rgba(110,140,120,0.12)'); node.setAttribute('stroke','#4F7B67'); node.setAttribute('stroke-width','3'); node.setAttribute('stroke-dasharray','8 5'); for(let ch of node.children) styleNode(ch); } }; styleNode(root); outlineGroup.appendChild(root); let sample=collectPoints(root); if(sample.length===0) throw new Error("无吸附点"); outlinePoints=sample; }
-        function setOutline(key,svgStr){ try{ renderSVGOutline(svgStr); currentOutlineKey=key; document.querySelectorAll('.outline-btn').forEach(btn=>{ if(btn.getAttribute('data-key')===key) btn.classList.add('active'); else btn.classList.remove('active'); }); }catch(e){ console.error(e); } }
-        function getRandomNine(){ let shuffled=[...fullMasterShapes]; for(let i=shuffled.length-1;i>0;i--){ let j=Math.floor(Math.random()*(i+1)); [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]]; } return shuffled.slice(0,9); }
-        function renderButtons(shapes){ outlineContainer.innerHTML=''; shapes.forEach(s=>{ let btn=document.createElement('button'); btn.className='outline-btn'; if(currentOutlineKey===s.key) btn.classList.add('active'); btn.setAttribute('data-key',s.key); btn.innerText=s.name; btn.addEventListener('click',()=>setOutline(s.key,s.svg)); outlineContainer.appendChild(btn); }); }
-        function refreshGallery(){ currentNineShapes=getRandomNine(); renderButtons(currentNineShapes); if(!currentNineShapes.some(s=>s.key===currentOutlineKey)){ currentOutlineKey=null; document.querySelectorAll('.outline-btn').forEach(btn=>btn.classList.remove('active')); } }
-        
-        // 截图居中生成 (压缩版：尺寸600x600，JPEG质量0.7)
-        async function generateCenteredScreenshot() {
-            const ns = "http://www.w3.org/2000/svg";
-            let allPoints = [];
-            if (outlineGroup.children.length > 0) {
-                for (let child of outlineGroup.children) {
-                    const clone = child.cloneNode(true);
-                    const clonedPoints = collectPoints(clone);
-                    allPoints.push(...clonedPoints);
+            const PIECE_EDGES = {};
+            for (let id in PIECE_DEFS) {
+                PIECE_EDGES[id] = getEdges(PIECE_DEFS[id].pts);
+            }
+
+            // ---------- 2. 几何工具 ----------
+            function polygonArea(verts) {
+                let area = 0;
+                for (let i = 0; i < verts.length; i++) {
+                    let j = (i + 1) % verts.length;
+                    area += verts[i].x * verts[j].y;
+                    area -= verts[j].x * verts[i].y;
+                }
+                return Math.abs(area) / 2;
+            }
+
+            function pointInPolygon(point, polygon) {
+                let x = point.x,
+                    y = point.y,
+                    inside = false;
+                for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                    let xi = polygon[i].x,
+                        yi = polygon[i].y;
+                    let xj = polygon[j].x,
+                        yj = polygon[j].y;
+                    let intersect = ((yi > y) != (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                    if (intersect) inside = !inside;
+                }
+                return inside;
+            }
+
+            const EPS = 1e-4;
+
+            function isInside(p, a, b) {
+                return (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x) >= -EPS;
+            }
+
+            function intersectSegments(a, b, c, d) {
+                let a1 = b.y - a.y,
+                    b1 = a.x - b.x,
+                    c1 = a.x * b.y - a.y * b.x;
+                let a2 = d.y - c.y,
+                    b2 = c.x - d.x,
+                    c2 = c.x * d.y - c.y * d.x;
+                let det = a1 * b2 - a2 * b1;
+                if (Math.abs(det) < EPS) return null;
+                let x = (c1 * b2 - c2 * b1) / det;
+                let y = (a1 * c2 - a2 * c1) / det;
+                if (x < Math.min(a.x, b.x) - EPS || x > Math.max(a.x, b.x) + EPS ||
+                    x < Math.min(c.x, d.x) - EPS || x > Math.max(c.x, d.x) + EPS ||
+                    y < Math.min(a.y, b.y) - EPS || y > Math.max(a.y, b.y) + EPS ||
+                    y < Math.min(c.y, d.y) - EPS || y > Math.max(c.y, d.y) + EPS) {
+                    return null;
+                }
+                return { x, y };
+            }
+
+            function dedup(vertices) {
+                let result = [];
+                for (let v of vertices) {
+                    let dup = false;
+                    for (let r of result) {
+                        if (Math.abs(r.x - v.x) < EPS && Math.abs(r.y - v.y) < EPS) { dup = true; break; }
+                    }
+                    if (!dup) result.push(v);
+                }
+                return result;
+            }
+
+            function clipPolygon(subject, clip) {
+                let output = subject.slice();
+                let cp1 = clip[clip.length - 1];
+                for (let i = 0; i < clip.length; i++) {
+                    let cp2 = clip[i];
+                    let input = output;
+                    output = [];
+                    let s = input[input.length - 1];
+                    for (let j = 0; j < input.length; j++) {
+                        let e = input[j];
+                        if (isInside(e, cp1, cp2)) {
+                            if (!isInside(s, cp1, cp2)) {
+                                let inter = intersectSegments(s, e, cp1, cp2);
+                                if (inter) output.push(inter);
+                            }
+                            output.push(e);
+                        } else if (isInside(s, cp1, cp2)) {
+                            let inter = intersectSegments(s, e, cp1, cp2);
+                            if (inter) output.push(inter);
+                        }
+                        s = e;
+                    }
+                    cp1 = cp2;
+                }
+                return dedup(output);
+            }
+
+            function computeIntersectionArea(poly1, poly2) {
+                let clipped = clipPolygon(poly1, poly2);
+                if (clipped.length < 3) return 0;
+                return polygonArea(clipped);
+            }
+
+            function getTransformedVerts(id, transform) {
+                const ptsStr = PIECE_DEFS[id].pts;
+                const pts = ptsStr.split(' ').map(p => p.split(',').map(Number));
+                const { x, y, rotate, flip } = transform;
+                const rad = rotate * Math.PI / 180;
+                let minX = Infinity,
+                    maxX = -Infinity,
+                    minY = Infinity,
+                    maxY = -Infinity;
+                for (let p of pts) { if (p[0] < minX) minX = p[0]; if (p[0] > maxX) maxX = p[0]; if (p[1] < minY) minY = p[1]; if (p[
+                        1] > maxY) maxY = p[1]; }
+                const cxx = (minX + maxX) / 2,
+                    cyy = (minY + maxY) / 2;
+                const verts = [];
+                for (let p of pts) {
+                    let px = p[0],
+                        py = p[1];
+                    if (flip === -1) px = 2 * cxx - px;
+                    let rx = cxx + (px - cxx) * Math.cos(rad) - (py - cyy) * Math.sin(rad);
+                    let ry = cyy + (px - cxx) * Math.sin(rad) + (py - cyy) * Math.cos(rad);
+                    verts.push({ x: rx + x, y: ry + y });
+                }
+                return verts;
+            }
+
+            // ---------- 3. 严格重叠检测 ----------
+            function isOverlapping(verts1, verts2) {
+                const area = computeIntersectionArea(verts1, verts2);
+                if (area > 1e-4) return true;
+                for (let v of verts1) {
+                    if (pointInPolygon(v, verts2)) return true;
+                }
+                for (let v of verts2) {
+                    if (pointInPolygon(v, verts1)) return true;
+                }
+
+                function getCentroid(verts) {
+                    let cx = 0,
+                        cy = 0;
+                    for (let v of verts) { cx += v.x;
+                        cy += v.y; }
+                    return { x: cx / verts.length, y: cy / verts.length };
+                }
+                const c1 = getCentroid(verts1);
+                const c2 = getCentroid(verts2);
+                if (pointInPolygon(c1, verts2) || pointInPolygon(c2, verts1)) return true;
+
+                function segmentsIntersect(a, b, c, d) {
+                    if (Math.max(a.x, b.x) < Math.min(c.x, d.x) ||
+                        Math.max(c.x, d.x) < Math.min(a.x, b.x) ||
+                        Math.max(a.y, b.y) < Math.min(c.y, d.y) ||
+                        Math.max(c.y, d.y) < Math.min(a.y, b.y)) return false;
+                    const d1 = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+                    const d2 = (b.x - a.x) * (d.y - a.y) - (b.y - a.y) * (d.x - a.x);
+                    if ((d1 > 0 && d2 > 0) || (d1 < 0 && d2 < 0)) return false;
+                    const d3 = (d.x - c.x) * (a.y - c.y) - (d.y - c.y) * (a.x - c.x);
+                    const d4 = (d.x - c.x) * (b.y - c.y) - (d.y - c.y) * (b.x - c.x);
+                    if ((d3 > 0 && d4 > 0) || (d3 < 0 && d4 < 0)) return false;
+                    if (Math.abs(d1) < EPS && Math.abs(d2) < EPS) {
+                        const len = Math.hypot(b.x - a.x, b.y - a.y);
+                        const t1 = ((c.x - a.x) * (b.x - a.x) + (c.y - a.y) * (b.y - a.y)) / len;
+                        const t2 = ((d.x - a.x) * (b.x - a.x) + (d.y - a.y) * (b.y - a.y)) / len;
+                        const minT = Math.min(t1, t2),
+                            maxT = Math.max(t1, t2);
+                        if (minT > 1 || maxT < 0) return false;
+                        if (Math.abs(maxT - minT) < EPS) return false;
+                        return true;
+                    }
+                    return true;
+                }
+                for (let i = 0; i < verts1.length; i++) {
+                    const a = verts1[i],
+                        b = verts1[(i + 1) % verts1.length];
+                    for (let j = 0; j < verts2.length; j++) {
+                        const c = verts2[j],
+                            d = verts2[(j + 1) % verts2.length];
+                        const share = (Math.hypot(a.x - c.x, a.y - c.y) < EPS ||
+                            Math.hypot(a.x - d.x, a.y - d.y) < EPS ||
+                            Math.hypot(b.x - c.x, b.y - c.y) < EPS ||
+                            Math.hypot(b.x - d.x, b.y - d.y) < EPS);
+                        if (share) continue;
+                        if (segmentsIntersect(a, b, c, d)) return true;
+                    }
+                }
+                return false;
+            }
+
+            // ---------- 4. 布尔并集提取外轮廓 ----------
+            function extractOutline(transforms) {
+                let allEdges = [];
+                for (let id in transforms) {
+                    const verts = getTransformedVerts(id, transforms[id]);
+                    for (let i = 0; i < verts.length; i++) {
+                        const j = (i + 1) % verts.length;
+                        allEdges.push({ id, v1: verts[i], v2: verts[j], used: false });
+                    }
+                }
+                for (let i = 0; i < allEdges.length; i++) {
+                    for (let j = i + 1; j < allEdges.length; j++) {
+                        const e1 = allEdges[i],
+                            e2 = allEdges[j];
+                        const d1 = Math.hypot(e1.v1.x - e2.v1.x, e1.v1.y - e2.v1.y);
+                        const d2 = Math.hypot(e1.v2.x - e2.v2.x, e1.v2.y - e2.v2.y);
+                        const d3 = Math.hypot(e1.v1.x - e2.v2.x, e1.v1.y - e2.v2.y);
+                        const d4 = Math.hypot(e1.v2.x - e2.v1.x, e1.v2.y - e2.v1.y);
+                        if ((d1 < EPS && d2 < EPS) || (d3 < EPS && d4 < EPS)) {
+                            e1.used = true;
+                            e2.used = true;
+                        }
+                    }
+                }
+                let boundaryEdges = allEdges.filter(e => !e.used);
+                if (boundaryEdges.length === 0) return [];
+                let rings = [];
+                let visited = new Set();
+                for (let startEdge of boundaryEdges) {
+                    if (visited.has(startEdge)) continue;
+                    let ring = [];
+                    let currentEdge = startEdge;
+                    ring.push(currentEdge.v1);
+                    let iter = 0;
+                    const maxIter = boundaryEdges.length * 2;
+                    while (iter < maxIter) {
+                        iter++;
+                        visited.add(currentEdge);
+                        const end = currentEdge.v2;
+                        ring.push(end);
+                        let found = null;
+                        for (let e of boundaryEdges) {
+                            if (visited.has(e)) continue;
+                            if (Math.hypot(e.v1.x - end.x, e.v1.y - end.y) < EPS) {
+                                found = e;
+                                break;
+                            }
+                            if (Math.hypot(e.v2.x - end.x, e.v2.y - end.y) < EPS) {
+                                let temp = e.v1;
+                                e.v1 = e.v2;
+                                e.v2 = temp;
+                                found = e;
+                                break;
+                            }
+                        }
+                        if (!found) break;
+                        currentEdge = found;
+                        if (currentEdge === startEdge) break;
+                    }
+                    let unique = [];
+                    for (let p of ring) {
+                        let dup = false;
+                        for (let u of unique)
+                            if (Math.hypot(u.x - p.x, u.y - p.y) < EPS) { dup = true; break; }
+                        if (!dup) unique.push(p);
+                    }
+                    if (unique.length >= 3) rings.push(unique);
+                }
+                if (rings.length === 0) return [];
+                if (rings.length === 1) return rings[0];
+                rings.sort((a, b) => polygonArea(b) - polygonArea(a));
+                return rings[0];
+            }
+
+            // ---------- 5. 随机拼接算法 ----------
+            function generateRandomPuzzle() {
+                const MAX_ATTEMPTS = 10000;
+                for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                    const result = tryGenerate();
+                    if (result) return result;
+                }
+                return null;
+            }
+
+            function tryGenerate() {
+                const ids = PIECE_IDS.slice();
+                shuffle(ids);
+                const placed = {};
+                const placedIds = [];
+                const firstId = ids[0];
+                placed[firstId] = { x: 0, y: 0, rotate: 0, flip: 1 };
+                placedIds.push(firstId);
+                let success = true;
+                for (let idx = 1; idx < ids.length; idx++) {
+                    const newId = ids[idx];
+                    let found = false;
+                    const shuffledPlaced = placedIds.slice();
+                    shuffle(shuffledPlaced);
+                    for (let pid of shuffledPlaced) {
+                        if (found) break;
+                        const pTrans = placed[pid];
+                        const pVerts = getTransformedVerts(pid, pTrans);
+                        const pEdges = PIECE_EDGES[pid];
+                        const newEdges = PIECE_EDGES[newId];
+                        const shuffledNewEdges = newEdges.slice();
+                        shuffle(shuffledNewEdges);
+                        for (let ne of shuffledNewEdges) {
+                            if (found) break;
+                            const shuffledPEdges = pEdges.slice();
+                            shuffle(shuffledPEdges);
+                            for (let pe of shuffledPEdges) {
+                                if (Math.abs(ne.len - pe.len) > 0.5) continue;
+                                for (let dir of [1, -1]) {
+                                    const p1 = pVerts[pe.index];
+                                    const p2 = pVerts[(pe.index + 1) % pVerts.length];
+                                    const nePts = PIECE_DEFS[newId].pts.split(' ').map(p => p.split(',').map(Number));
+                                    const n1 = nePts[ne.index];
+                                    const n2 = nePts[(ne.index + 1) % nePts.length];
+                                    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.atan2(n2[1] - n1[1], n2[0] -
+                                    n1[0]) * dir;
+                                    const flip = dir;
+                                    const rad = angle;
+                                    const cos = Math.cos(rad),
+                                        sin = Math.sin(rad);
+                                    let minX = Infinity,
+                                        maxX = -Infinity,
+                                        minY = Infinity,
+                                        maxY = -Infinity;
+                                    for (let pt of nePts) { if (pt[0] < minX) minX = pt[0]; if (pt[0] > maxX) maxX = pt[0]; if (
+                                            pt[1] < minY) minY = pt[1]; if (pt[1] > maxY) maxY = pt[1]; }
+                                    const cx2 = (minX + maxX) / 2,
+                                        cy2 = (minY + maxY) / 2;
+                                    let nx1 = n1[0],
+                                        ny1 = n1[1];
+                                    if (flip === -1) nx1 = 2 * cx2 - nx1;
+                                    let rx1 = cx2 + (nx1 - cx2) * cos - (ny1 - cy2) * sin;
+                                    let ry1 = cy2 + (nx1 - cx2) * sin + (ny1 - cy2) * cos;
+                                    const dx = p1.x - rx1;
+                                    const dy = p1.y - ry1;
+                                    const newTrans = { x: dx, y: dy, rotate: angle * 180 / Math.PI, flip: flip };
+                                    const newVerts = getTransformedVerts(newId, newTrans);
+                                    let overlap = false;
+                                    for (let pid2 of placedIds) {
+                                        const otherVerts = getTransformedVerts(pid2, placed[pid2]);
+                                        if (isOverlapping(newVerts, otherVerts)) {
+                                            overlap = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!overlap) {
+                                        placed[newId] = newTrans;
+                                        placedIds.push(newId);
+                                        found = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!found) { success = false; break; }
+                }
+                if (!success) return null;
+                for (let i = 0; i < placedIds.length; i++) {
+                    for (let j = i + 1; j < placedIds.length; j++) {
+                        const id1 = placedIds[i],
+                            id2 = placedIds[j];
+                        const v1 = getTransformedVerts(id1, placed[id1]);
+                        const v2 = getTransformedVerts(id2, placed[id2]);
+                        if (isOverlapping(v1, v2)) return null;
+                    }
+                }
+                const outlineVerts = extractOutline(placed);
+                if (outlineVerts.length < 3) return null;
+                const task = {
+                    id: 'random_' + Date.now(),
+                    name: '边重合拼图',
+                    desc: '七块积木边对边重合，零重叠',
+                    outline: outlineVerts,
+                    solution: placed
+                };
+                return task;
+            }
+
+            function shuffle(arr) {
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                return arr;
+            }
+
+            // ---------- 6. 状态与 DOM ----------
+            const svgElem = document.getElementById('mainSvg');
+            const viewportGroup = document.getElementById('viewportGroup');
+            const piecesGroup = document.getElementById('piecesGroup');
+            const outlineLayer = document.getElementById('outlineLayer');
+            const toast = document.getElementById('toastMessage');
+            const zoomSpan = document.getElementById('zoomLevel');
+            const generateBtn = document.getElementById('generateBtn');
+            const examBtn = document.getElementById('examBtn');
+            const timerDisplay = document.getElementById('timerDisplay');
+            const countDisplay = document.getElementById('countDisplay');
+            const rankList = document.getElementById('rankList');
+
+            let transforms = {},
+                selectedGroup = null,
+                activeElement = null;
+            let isDragging = false,
+                dragOffset = { x: 0, y: 0 };
+            let isPanning = false,
+                panAnchor = { x: 0, y: 0 };
+            let viewScale = 1,
+                viewTranslate = { x: 0, y: 0 };
+            let lastClickTime = 0;
+            const SNAP_THRESHOLD = 24;
+            let currentTask = null;
+            let outlineSegments = [];
+            const CLASSIC_SQUARE_SIZE = 400;
+            const CLASSIC_OUTLINE_GAP = 48;
+            const CLASSIC_FALLBACK_OFFSET = { x: 120, y: 160 };
+
+            // 自动更换定时器
+            let autoTimer = null;
+
+            // 答题模式状态
+            let isExamMode = false;
+            let examTimer = null;
+            let examSeconds = 120; // 2分钟
+            let examCount = 0;
+            let examClass = '';
+            let examName = '';
+            let examActive = false;
+
+            // 排行榜数据缓存
+            let rankData = [];
+            let whitelistData = [];
+
+            // ---------- 7. 交互逻辑 ----------
+            function getSVGPoint(cx, cy) {
+                let pt = svgElem.createSVGPoint();
+                pt.x = cx;
+                pt.y = cy;
+                let ctm = svgElem.getScreenCTM();
+                return ctm ? pt.matrixTransform(ctm.inverse()) : pt;
+            }
+
+            function getLocalPos(evt) {
+                let cx = evt.touches ? evt.touches[0].clientX : evt.clientX;
+                let cy = evt.touches ? evt.touches[0].clientY : evt.clientY;
+                let p = getSVGPoint(cx, cy);
+                return { x: (p.x - viewTranslate.x) / viewScale, y: (p.y - viewTranslate.y) / viewScale };
+            }
+
+            function updateViewport() {
+                viewportGroup.setAttribute('transform', `translate(${viewTranslate.x},${viewTranslate.y}) scale(${viewScale})`);
+                zoomSpan.innerText = Math.round(viewScale * 100) + '%';
+            }
+
+            function updateTransform(g) {
+                let t = transforms[g.id];
+                let poly = g.querySelector('polygon');
+                let bbox = poly.getBBox();
+                let cx = bbox.x + bbox.width / 2,
+                    cy = bbox.y + bbox.height / 2;
+                let flipX = t.flip === -1 ? -2 * cx : 0;
+                g.setAttribute('transform', `translate(${t.x},${t.y}) rotate(${t.rotate},${cx},${cy}) scale(${t.flip},1) translate(${flipX},0)`);
+            }
+
+            function getTransformedVertices(g, overridePos = null) {
+                let t = transforms[g.id];
+                if (!t) return [];
+                let px = overridePos ? overridePos.x : t.x,
+                    py = overridePos ? overridePos.y : t.y;
+                let rot = t.rotate * Math.PI / 180,
+                    flip = t.flip;
+                let poly = g.querySelector('polygon');
+                let pts = poly.points,
+                    bbox = poly.getBBox();
+                let cx = bbox.x + bbox.width / 2,
+                    cy = bbox.y + bbox.height / 2;
+                let verts = [];
+                for (let i = 0; i < pts.numberOfItems; i++) {
+                    let p = pts.getItem(i);
+                    let x = p.x,
+                        y = p.y;
+                    if (flip === -1) x = 2 * cx - x;
+                    let rx = cx + (x - cx) * Math.cos(rot) - (y - cy) * Math.sin(rot);
+                    let ry = cy + (x - cx) * Math.sin(rot) + (y - cy) * Math.cos(rot);
+                    verts.push({ x: rx + px, y: ry + py });
+                }
+                return verts;
+            }
+
+            function closestPointOnSegment(p, a, b) {
+                let dx = b.x - a.x,
+                    dy = b.y - a.y;
+                let len2 = dx * dx + dy * dy;
+                if (len2 === 0) return { x: a.x, y: a.y, dist: Math.hypot(p.x - a.x, p.y - a.y) };
+                let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2;
+                t = Math.max(0, Math.min(1, t));
+                let cx = a.x + t * dx,
+                    cy = a.y + t * dy;
+                return { x: cx, y: cy, dist: Math.hypot(p.x - cx, p.y - cy) };
+            }
+
+            function getInterPieceSnapOffset(g, tx, ty) {
+                let verts = getTransformedVertices(g, { x: tx, y: ty });
+                let bestPoint = null,
+                    bestEdge = null;
+                let allGroups = document.querySelectorAll('.draggable-group');
+                for (let other of allGroups) {
+                    if (other === g) continue;
+                    let oVerts = getTransformedVertices(other, null);
+                    for (let v1 of verts)
+                        for (let v2 of oVerts) {
+                            let dx = v2.x - v1.x,
+                                dy = v2.y - v1.y,
+                                d = Math.hypot(dx, dy);
+                            if (d < SNAP_THRESHOLD && (!bestPoint || d < bestPoint.dist)) bestPoint = { dx, dy, dist: d };
+                        }
+                    for (let v1 of verts)
+                        for (let i = 0; i < oVerts.length; i++) {
+                            let a = oVerts[i],
+                                b = oVerts[(i + 1) % oVerts.length];
+                            let closest = closestPointOnSegment(v1, a, b);
+                            let dx = a.x - b.x,
+                                dy = a.y - b.y;
+                            let len2 = dx * dx + dy * dy;
+                            let t = ((v1.x - a.x) * dx + (v1.y - a.y) * dy) / len2;
+                            if (t > 0.001 && t < 0.999 && closest.dist < SNAP_THRESHOLD) {
+                                if (!bestEdge || closest.dist < bestEdge.dist)
+                                    bestEdge = { dx: closest.x - v1.x, dy: closest.y - v1.y, dist: closest.dist };
+                            }
+                        }
+                }
+                if (bestPoint) return bestPoint;
+                if (bestEdge) return bestEdge;
+                return null;
+            }
+
+            function getOutlineSnapOffset(g, tx, ty) {
+                if (outlineSegments.length === 0) return null;
+                let verts = getTransformedVertices(g, { x: tx, y: ty });
+                let endpoints = [];
+                for (let seg of outlineSegments) {
+                    endpoints.push({ x: seg.x1, y: seg.y1 });
+                    endpoints.push({ x: seg.x2, y: seg.y2 });
+                }
+                let uniqueEndpoints = [];
+                for (let p of endpoints) {
+                    let dup = false;
+                    for (let u of uniqueEndpoints) {
+                        if (Math.hypot(u.x - p.x, u.y - p.y) < 0.1) { dup = true; break; }
+                    }
+                    if (!dup) uniqueEndpoints.push(p);
+                }
+
+                let bestPoint = null;
+                for (let v of verts) {
+                    for (let ept of uniqueEndpoints) {
+                        let dx = ept.x - v.x,
+                            dy = ept.y - v.y,
+                            d = Math.hypot(dx, dy);
+                        if (d < SNAP_THRESHOLD && (!bestPoint || d < bestPoint.dist)) {
+                            bestPoint = { dx, dy, dist: d };
+                        }
+                    }
+                }
+                if (bestPoint) return bestPoint;
+
+                let bestEdge = null;
+                for (let v of verts) {
+                    for (let seg of outlineSegments) {
+                        let a = { x: seg.x1, y: seg.y1 };
+                        let b = { x: seg.x2, y: seg.y2 };
+                        let closest = closestPointOnSegment(v, a, b);
+                        let dx = b.x - a.x,
+                            dy = b.y - a.y;
+                        let len2 = dx * dx + dy * dy;
+                        let t = ((v.x - a.x) * dx + (v.y - a.y) * dy) / len2;
+                        if (t > 0.001 && t < 0.999 && closest.dist < SNAP_THRESHOLD) {
+                            if (!bestEdge || closest.dist < bestEdge.dist) {
+                                bestEdge = { dx: closest.x - v.x, dy: closest.y - v.y, dist: closest.dist };
+                            }
+                        }
+                    }
+                }
+                return bestEdge || null;
+            }
+
+            function applySmartSnap(g, tx, ty) {
+                let snap = getInterPieceSnapOffset(g, tx, ty);
+                if (!snap) {
+                    snap = getOutlineSnapOffset(g, tx, ty);
+                }
+                if (snap) {
+                    return { x: tx + snap.dx, y: ty + snap.dy };
+                }
+                return { x: tx, y: ty };
+            }
+
+            function startDrag(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                let target = evt.currentTarget;
+                let now = Date.now();
+                if (now - lastClickTime < 280) { rotatePiece(target, 45);
+                    lastClickTime = 0; return; }
+                lastClickTime = now;
+                document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
+                target.querySelector('.piece').classList.add('selected');
+                selectedGroup = target;
+                activeElement = target;
+                piecesGroup.appendChild(target);
+                let local = getLocalPos(evt);
+                let cur = transforms[target.id];
+                dragOffset.x = local.x - cur.x;
+                dragOffset.y = local.y - cur.y;
+                isDragging = true;
+                window.addEventListener('mousemove', onDragMove);
+                window.addEventListener('mouseup', onDragEnd);
+                window.addEventListener('touchmove', onDragMove, { passive: false });
+                window.addEventListener('touchend', onDragEnd);
+            }
+
+            function onDragMove(evt) {
+                if (!isDragging || !selectedGroup) return;
+                evt.preventDefault();
+                let local = getLocalPos(evt);
+                let snapped = applySmartSnap(selectedGroup, local.x - dragOffset.x, local.y - dragOffset.y);
+                transforms[selectedGroup.id].x = snapped.x;
+                transforms[selectedGroup.id].y = snapped.y;
+                updateTransform(selectedGroup);
+            }
+
+            function onDragEnd() {
+                isDragging = false;
+                selectedGroup = null;
+                window.removeEventListener('mousemove', onDragMove);
+                window.removeEventListener('mouseup', onDragEnd);
+                window.removeEventListener('touchmove', onDragMove);
+                window.removeEventListener('touchend', onDragEnd);
+            }
+
+            function startPan(evt) {
+                if (evt.target.closest && evt.target.closest('.draggable-group')) return;
+                isPanning = true;
+                let mouse = getSVGPoint(evt.touches ? evt.touches[0].clientX : evt.clientX, evt.touches ? evt.touches[0]
+                    .clientY : evt.clientY);
+                panAnchor = { x: mouse.x - viewTranslate.x, y: mouse.y - viewTranslate.y };
+                window.addEventListener('mousemove', onPanMove);
+                window.addEventListener('mouseup', onPanEnd);
+                window.addEventListener('touchmove', onPanMove, { passive: false });
+                window.addEventListener('touchend', onPanEnd);
+            }
+
+            function onPanMove(evt) {
+                if (!isPanning) return;
+                evt.preventDefault();
+                let mouse = getSVGPoint(evt.touches ? evt.touches[0].clientX : evt.clientX, evt.touches ? evt.touches[0]
+                    .clientY : evt.clientY);
+                viewTranslate.x = mouse.x - panAnchor.x;
+                viewTranslate.y = mouse.y - panAnchor.y;
+                updateViewport();
+            }
+
+            function onPanEnd() { isPanning = false;
+                window.removeEventListener('mousemove', onPanMove);
+                window.removeEventListener('mouseup', onPanEnd);
+                window.removeEventListener('touchmove', onPanMove);
+                window.removeEventListener('touchend', onPanEnd); }
+
+            function handleWheel(evt) {
+                evt.preventDefault();
+                let delta = evt.deltaY > 0 ? 0.92 : 1.08;
+                let mouse = getSVGPoint(evt.clientX, evt.clientY);
+                let old = viewScale;
+                let ns = Math.min(3.2, Math.max(0.3, viewScale * delta));
+                viewTranslate.x = mouse.x - (mouse.x - viewTranslate.x) * (ns / old);
+                viewTranslate.y = mouse.y - (mouse.y - viewTranslate.y) * (ns / old);
+                viewScale = ns;
+                updateViewport();
+            }
+
+            function changeZoom(f) {
+                let ns = Math.min(3.2, Math.max(0.3, viewScale * f));
+                let c = getSVGPoint(600, 400);
+                viewTranslate.x = c.x - (c.x - viewTranslate.x) * (ns / viewScale);
+                viewTranslate.y = c.y - (c.y - viewTranslate.y) * (ns / viewScale);
+                viewScale = ns;
+                updateViewport();
+            }
+
+            function resetView() { viewScale = 1;
+                viewTranslate = { x: 0, y: 0 };
+                updateViewport(); }
+
+            function rotatePiece(p, a) { transforms[p.id].rotate = (transforms[p.id].rotate + a) % 360;
+                updateTransform(p); }
+
+            function rotateSelected(a) { if (activeElement) rotatePiece(activeElement, a);
+                else toastMsg('请先单击选中一块积木', 'fail'); }
+
+            function flipSelected() { if (activeElement) { transforms[activeElement.id].flip *= -1;
+                    updateTransform(activeElement); } else toastMsg('请先单击选中一块积木', 'fail'); }
+
+            function getOutlineBounds() {
+                const points = [];
+                for (let seg of outlineSegments) {
+                    points.push({ x: seg.x1, y: seg.y1 });
+                    points.push({ x: seg.x2, y: seg.y2 });
+                }
+                if (points.length === 0 && currentTask && currentTask.outline) {
+                    for (let p of currentTask.outline) points.push(p);
+                }
+                if (points.length === 0) return null;
+
+                const xs = points.map(p => p.x);
+                const ys = points.map(p => p.y);
+                return {
+                    minX: Math.min(...xs),
+                    maxX: Math.max(...xs),
+                    minY: Math.min(...ys),
+                    maxY: Math.max(...ys)
+                };
+            }
+
+            function clampClassicOffset(offset) {
+                const margin = 24;
+                return {
+                    x: Math.max(margin, Math.min(1200 - CLASSIC_SQUARE_SIZE - margin, offset.x)),
+                    y: Math.max(margin, Math.min(800 - CLASSIC_SQUARE_SIZE - margin, offset.y))
+                };
+            }
+
+            function getClassicStartOffset() {
+                const bounds = getOutlineBounds();
+                if (!bounds) return CLASSIC_FALLBACK_OFFSET;
+
+                const margin = 24;
+                const maxStartX = 1200 - CLASSIC_SQUARE_SIZE - margin;
+                const maxStartY = 800 - CLASSIC_SQUARE_SIZE - margin;
+                const clampValue = (value, min, max) => Math.max(min, Math.min(max, value));
+                const targetY = bounds.minY + (bounds.maxY - bounds.minY - CLASSIC_SQUARE_SIZE) / 2;
+                const targetX = bounds.minX + (bounds.maxX - bounds.minX - CLASSIC_SQUARE_SIZE) / 2;
+                const candidates = [
+                    {
+                        x: bounds.maxX + CLASSIC_OUTLINE_GAP,
+                        y: clampValue(targetY, margin, maxStartY),
+                        fits: bounds.maxX + CLASSIC_OUTLINE_GAP + CLASSIC_SQUARE_SIZE <= 1200 - margin
+                    },
+                    {
+                        x: bounds.minX - CLASSIC_OUTLINE_GAP - CLASSIC_SQUARE_SIZE,
+                        y: clampValue(targetY, margin, maxStartY),
+                        fits: bounds.minX - CLASSIC_OUTLINE_GAP - CLASSIC_SQUARE_SIZE >= margin
+                    },
+                    {
+                        x: clampValue(targetX, margin, maxStartX),
+                        y: bounds.maxY + CLASSIC_OUTLINE_GAP,
+                        fits: bounds.maxY + CLASSIC_OUTLINE_GAP + CLASSIC_SQUARE_SIZE <= 800 - margin
+                    },
+                    {
+                        x: clampValue(targetX, margin, maxStartX),
+                        y: bounds.minY - CLASSIC_OUTLINE_GAP - CLASSIC_SQUARE_SIZE,
+                        fits: bounds.minY - CLASSIC_OUTLINE_GAP - CLASSIC_SQUARE_SIZE >= margin
+                    }
+                ];
+
+                for (let c of candidates) {
+                    if (c.fits) return { x: c.x, y: c.y };
+                }
+                return clampClassicOffset(candidates[0]);
+            }
+
+            function resetPieces() {
+                document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
+                activeElement = null;
+                selectedGroup = null;
+                const startOffset = getClassicStartOffset();
+                for (let id in PIECE_DEFS) {
+                    transforms[id] = {
+                        x: startOffset.x,
+                        y: startOffset.y,
+                        rotate: 0,
+                        flip: 1
+                    };
+                    let g = document.getElementById(id);
+                    if (g) updateTransform(g);
+                }
+                resetView();
+            }
+
+            // ---------- 8. 绘制轮廓线 ----------
+            function drawPieceOutlines(task) {
+                outlineLayer.innerHTML = '';
+                outlineSegments = [];
+                if (!task || !task.solution) return;
+
+                const EPS_MATCH = 0.6;
+                const allEdges = [];
+
+                for (let id in task.solution) {
+                    const transform = task.solution[id];
+                    const verts = getTransformedVerts(id, transform);
+                    if (verts.length < 3) continue;
+                    for (let i = 0; i < verts.length; i++) {
+                        const j = (i + 1) % verts.length;
+                        allEdges.push({
+                            id: id,
+                            v1: { x: verts[i].x, y: verts[i].y },
+                            v2: { x: verts[j].x, y: verts[j].y },
+                            shared: false
+                        });
+                    }
+                }
+
+                for (let i = 0; i < allEdges.length; i++) {
+                    for (let j = i + 1; j < allEdges.length; j++) {
+                        const e1 = allEdges[i];
+                        const e2 = allEdges[j];
+                        if (e1.id === e2.id) continue;
+                        const len1 = Math.hypot(e1.v2.x - e1.v1.x, e1.v2.y - e1.v1.y);
+                        const len2 = Math.hypot(e2.v2.x - e2.v1.x, e2.v2.y - e2.v1.y);
+                        if (Math.abs(len1 - len2) > EPS_MATCH) continue;
+                        const d1 = Math.hypot(e1.v1.x - e2.v1.x, e1.v1.y - e2.v1.y);
+                        const d2 = Math.hypot(e1.v2.x - e2.v2.x, e1.v2.y - e2.v2.y);
+                        if (d1 < EPS_MATCH && d2 < EPS_MATCH) {
+                            e1.shared = true;
+                            e2.shared = true;
+                            continue;
+                        }
+                        const d3 = Math.hypot(e1.v1.x - e2.v2.x, e1.v1.y - e2.v2.y);
+                        const d4 = Math.hypot(e1.v2.x - e2.v1.x, e1.v2.y - e2.v1.y);
+                        if (d3 < EPS_MATCH && d4 < EPS_MATCH) {
+                            e1.shared = true;
+                            e2.shared = true;
+                            continue;
+                        }
+                    }
+                }
+
+                for (let edge of allEdges) {
+                    if (!edge.shared) {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', edge.v1.x);
+                        line.setAttribute('y1', edge.v1.y);
+                        line.setAttribute('x2', edge.v2.x);
+                        line.setAttribute('y2', edge.v2.y);
+                        line.setAttribute('class', 'piece-outline-exposed');
+                        outlineLayer.appendChild(line);
+                        outlineSegments.push({ x1: edge.v1.x, y1: edge.v1.y, x2: edge.v2.x, y2: edge.v2.y });
+                    }
                 }
             }
-            for (let group of groups) {
-                const verts = getTransformedVertices(group);
-                allPoints.push(...verts);
+
+            // ---------- 9. 加载任务 ----------
+            function loadTask(task) {
+                currentTask = task;
+                drawPieceOutlines(task);
+                piecesGroup.innerHTML = '';
+                for (let id in PIECE_DEFS) {
+                    let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    g.id = id;
+                    g.classList.add('draggable-group');
+
+                    let poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', PIECE_DEFS[id].pts);
+                    poly.setAttribute('fill', PIECE_DEFS[id].fill);
+                    poly.classList.add('piece');
+                    g.appendChild(poly);
+
+                    let pts = PIECE_DEFS[id].pts.split(' ').map(p => p.split(',').map(Number));
+                    let cx = 0,
+                        cy = 0;
+                    for (let p of pts) { cx += p[0];
+                        cy += p[1]; }
+                    cx /= pts.length;
+                    cy /= pts.length;
+
+                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', cx);
+                    text.setAttribute('y', cy);
+                    text.setAttribute('class', 'label');
+                    text.textContent = PIECE_NUMBERS[id] || id.replace('p', '');
+                    g.appendChild(text);
+
+                    piecesGroup.appendChild(g);
+                    g.addEventListener('mousedown', startDrag);
+                    g.addEventListener('touchstart', startDrag, { passive: false });
+                }
+                resetPieces();
+                // 只在非答题模式或答题模式首次加载时显示提示
+                if (!isExamMode || !examActive) {
+                    toastMsg(`加载拼图：${task.name}`, 'success');
+                } else {
+                    // 答题模式下静默加载
+                }
             }
-            if (allPoints.length === 0) {
-                const canvas = document.createElement("canvas");
-                canvas.width = 600; canvas.height = 600;
-                const ctx = canvas.getContext("2d");
-                ctx.fillStyle = "#FCFAF2";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                return canvas.toDataURL("image/jpeg", 0.7);
+
+            // ---------- 10. 生成新拼图（答题模式为“跳过”功能） ----------
+            function generateNewPuzzle(isSkip = false) {
+                if (generateBtn.disabled) return;
+
+                // 答题模式下，点击“跳过”或验证成功自动换题都走这里
+                // isSkip 用于区分手动点击跳过（true）和自动换题（false）
+
+                if (autoTimer) {
+                    clearTimeout(autoTimer);
+                    autoTimer = null;
+                }
+                generateBtn.disabled = true;
+                setTimeout(() => {
+                    try {
+                        const task = generateRandomPuzzle();
+                        if (task) {
+                            loadTask(task);
+                            if (isSkip && isExamMode && examActive) {
+                                toastMsg('⏭️ 已跳过本题', 'info');
+                            }
+                        } else {
+                            toastMsg('❌ 生成失败，请重试', 'fail');
+                        }
+                    } catch (e) {
+                        toastMsg('❌ 生成异常，请重试', 'fail');
+                        console.error(e);
+                    } finally {
+                        generateBtn.disabled = false;
+                    }
+                }, 20);
             }
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            for (let p of allPoints) { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); }
-            let padding = Math.max(40, Math.min((maxX - minX) * 0.15, (maxY - minY) * 0.15));
-            padding = Math.min(padding, 150);
-            const finalMinX = minX - padding, finalMinY = minY - padding;
-            const finalMaxX = maxX + padding, finalMaxY = maxY + padding;
-            const viewW = finalMaxX - finalMinX, viewH = finalMaxY - finalMinY;
-            const finalSvg = document.createElementNS(ns, "svg");
-            finalSvg.setAttribute("viewBox", `${finalMinX} ${finalMinY} ${viewW} ${viewH}`);
-            finalSvg.setAttribute("width", viewW); finalSvg.setAttribute("height", viewH);
-            finalSvg.style.backgroundColor = "#FCFAF2";
-            if (outlineGroup.children.length > 0) { for (let child of outlineGroup.children) { finalSvg.appendChild(child.cloneNode(true)); } }
-            for (let group of groups) {
-                const t = transforms[group.id];
-                if (!t) continue;
-                const origPoly = group.querySelector('polygon');
-                const origText = group.querySelector('text');
-                if (!origPoly) continue;
-                const polyClone = origPoly.cloneNode(true);
-                const bbox = polyClone.getBBox();
-                const cx = bbox.x + bbox.width/2, cy = bbox.y + bbox.height/2;
-                const gWrapper = document.createElementNS(ns, "g");
-                let flipOffset = t.flip === -1 ? -2 * cx : 0;
-                gWrapper.setAttribute("transform", `translate(${t.x}, ${t.y}) rotate(${t.rotate}, ${cx}, ${cy}) scale(${t.flip}, 1) translate(${flipOffset}, 0)`);
-                gWrapper.appendChild(polyClone);
-                if (origText) { gWrapper.appendChild(origText.cloneNode(true)); }
-                finalSvg.appendChild(gWrapper);
+
+            // ---------- 11. 验证拼图 ----------
+            const EDGE_EPS = 1.5;
+
+            function pointsAlmostEqual(p1, p2, eps = EDGE_EPS) {
+                return Math.hypot(p1.x - p2.x, p1.y - p2.y) <= eps;
             }
-            const svgString = new XMLSerializer().serializeToString(finalSvg);
-            const blob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
-            const url = URL.createObjectURL(blob);
-            const img = new Image();
-            await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; img.src = url; });
-            const canvas = document.createElement("canvas");
-            const targetSize = 600;   // 从800降至600，大幅减小体积
-            const scale = targetSize / Math.max(viewW, viewH);
-            canvas.width = targetSize; canvas.height = targetSize;
-            const ctx = canvas.getContext("2d");
-            ctx.fillStyle = "#FCFAF2"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            const drawW = viewW * scale, drawH = viewH * scale;
-            const offsetX = (targetSize - drawW) / 2, offsetY = (targetSize - drawH) / 2;
-            ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
-            URL.revokeObjectURL(url);
-            // 使用 JPEG 格式 0.7 质量压缩，比 PNG 小 5~10 倍
-            return canvas.toDataURL("image/jpeg", 0.7);
-        }
-        
-        // 提交作品
-        async function submitWork(){
-            submitModal.style.display='flex'; submitStatus.style.display='none'; 
-            studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
-            
-            const confirmHandler = async () => {
-                const className = classSelect.value;
-                const name = studentName.value.trim();
-                const workName = workNameInput.value.trim();
-                const story = storyInput.value.trim();
-                if (!name) { alert('请输入姓名'); return; }
-                if (!workName) { alert('请输入作品名称'); return; }
-                
-                submitStatus.style.display = 'block';
-                submitStatus.innerText = '🔍 正在验证身份...';
-                const whitelistResult = await checkWhitelist(className, name);
-                if (!whitelistResult.allowed) {
-                    submitStatus.innerText = whitelistResult.message;
-                    setTimeout(() => { submitStatus.style.display = 'none'; }, 3000);
+
+            function normalizeEdge(edge) {
+                const p1 = { x: edge.x1, y: edge.y1 };
+                const p2 = { x: edge.x2, y: edge.y2 };
+                const first = (p1.x < p2.x || (Math.abs(p1.x - p2.x) <= EPS && p1.y <= p2.y)) ? p1 : p2;
+                const second = first === p1 ? p2 : p1;
+                return {
+                    x1: first.x,
+                    y1: first.y,
+                    x2: second.x,
+                    y2: second.y,
+                    len: Math.hypot(second.x - first.x, second.y - first.y)
+                };
+            }
+
+            function edgesAlmostEqual(e1, e2, eps = EDGE_EPS) {
+                const len1 = Math.hypot(e1.x2 - e1.x1, e1.y2 - e1.y1);
+                const len2 = Math.hypot(e2.x2 - e2.x1, e2.y2 - e2.y1);
+                if (Math.abs(len1 - len2) > eps) return false;
+
+                const a1 = { x: e1.x1, y: e1.y1 };
+                const a2 = { x: e1.x2, y: e1.y2 };
+                const b1 = { x: e2.x1, y: e2.y1 };
+                const b2 = { x: e2.x2, y: e2.y2 };
+                const sameDirection = pointsAlmostEqual(a1, b1, eps) && pointsAlmostEqual(a2, b2, eps);
+                const reverseDirection = pointsAlmostEqual(a1, b2, eps) && pointsAlmostEqual(a2, b1, eps);
+                return sameDirection || reverseDirection;
+            }
+
+            function getCurrentExposedEdges() {
+                const allGroups = document.querySelectorAll('.draggable-group');
+                const allEdges = [];
+
+                for (let g of allGroups) {
+                    const verts = getTransformedVertices(g);
+                    for (let i = 0; i < verts.length; i++) {
+                        const j = (i + 1) % verts.length;
+                        allEdges.push({
+                            id: g.id,
+                            x1: verts[i].x,
+                            y1: verts[i].y,
+                            x2: verts[j].x,
+                            y2: verts[j].y,
+                            shared: false
+                        });
+                    }
+                }
+
+                for (let i = 0; i < allEdges.length; i++) {
+                    for (let j = i + 1; j < allEdges.length; j++) {
+                        const e1 = allEdges[i];
+                        const e2 = allEdges[j];
+                        if (e1.id === e2.id) continue;
+                        if (edgesAlmostEqual(e1, e2, EDGE_EPS)) {
+                            e1.shared = true;
+                            e2.shared = true;
+                        }
+                    }
+                }
+
+                return allEdges.filter(edge => !edge.shared).map(normalizeEdge);
+            }
+
+            function compareBoundaryEdges(currentEdges, targetEdges) {
+                const normalizedCurrent = currentEdges.map(normalizeEdge);
+                const normalizedTarget = targetEdges.map(normalizeEdge);
+                const matchedTarget = new Set();
+                let unmatchedCurrent = 0;
+
+                for (let currentEdge of normalizedCurrent) {
+                    let matchedIndex = -1;
+                    for (let i = 0; i < normalizedTarget.length; i++) {
+                        if (matchedTarget.has(i)) continue;
+                        if (edgesAlmostEqual(currentEdge, normalizedTarget[i], EDGE_EPS)) {
+                            matchedIndex = i;
+                            break;
+                        }
+                    }
+                    if (matchedIndex >= 0) {
+                        matchedTarget.add(matchedIndex);
+                    } else {
+                        unmatchedCurrent++;
+                    }
+                }
+
+                return {
+                    ok: unmatchedCurrent === 0 && matchedTarget.size === normalizedTarget.length && normalizedCurrent.length === normalizedTarget.length,
+                    unmatchedCurrent,
+                    unmatchedTarget: normalizedTarget.length - matchedTarget.size,
+                    currentCount: normalizedCurrent.length,
+                    targetCount: normalizedTarget.length
+                };
+            }
+
+            function edgeToPoints(edge) {
+                return {
+                    start: { x: edge.x1, y: edge.y1 },
+                    end: { x: edge.x2, y: edge.y2 }
+                };
+            }
+
+            function buildBoundaryLoops(edges, eps = EDGE_EPS) {
+                const remaining = edges.map(edgeToPoints);
+                const loops = [];
+
+                while (remaining.length > 0) {
+                    const first = remaining.shift();
+                    const loop = [first.start, first.end];
+                    let current = first.end;
+                    let closed = pointsAlmostEqual(current, first.start, eps);
+
+                    while (!closed && remaining.length > 0) {
+                        let foundIndex = -1;
+                        let nextPoint = null;
+                        for (let i = 0; i < remaining.length; i++) {
+                            const edge = remaining[i];
+                            if (pointsAlmostEqual(edge.start, current, eps)) {
+                                foundIndex = i;
+                                nextPoint = edge.end;
+                                break;
+                            }
+                            if (pointsAlmostEqual(edge.end, current, eps)) {
+                                foundIndex = i;
+                                nextPoint = edge.start;
+                                break;
+                            }
+                        }
+
+                        if (foundIndex < 0) break;
+                        remaining.splice(foundIndex, 1);
+                        current = nextPoint;
+                        closed = pointsAlmostEqual(current, first.start, eps);
+                        if (!closed) loop.push(current);
+                    }
+
+                    if (closed && loop.length >= 3) loops.push(loop);
+                }
+
+                return loops;
+            }
+
+            function boundaryAreaFromEdges(edges) {
+                const loops = buildBoundaryLoops(edges);
+                if (loops.length === 0) return 0;
+                let area = 0;
+                for (let loop of loops) area += polygonArea(loop);
+                return area;
+            }
+
+            function verifyPuzzle() {
+                if (!currentTask) { toastMsg("请先生成一个拼图！", "fail"); return; }
+                if (!outlineSegments || outlineSegments.length === 0) { toastMsg("当前任务无轮廓线数据", "fail"); return; }
+                const outline = currentTask.outline;
+                if (!outline || outline.length < 3) { toastMsg("当前任务无轮廓数据", "fail"); return; }
+
+                const allGroups = document.querySelectorAll('.draggable-group');
+                const OUTSIDE_TOLERANCE = 15;
+                const OVERLAP_PER_PAIR = 5;
+                const OVERLAP_TOTAL = 10;
+
+                let allValid = true,
+                    maxOutsideDist = 0;
+                for (let g of allGroups) {
+                    let verts = getTransformedVertices(g);
+                    for (let v of verts) {
+                        if (pointInPolygon(v, outline)) continue;
+                        let minDist = Infinity;
+                        for (let i = 0; i < outline.length; i++) {
+                            let a = outline[i],
+                                b = outline[(i + 1) % outline.length];
+                            let d = closestPointOnSegment(v, a, b).dist;
+                            if (d < minDist) minDist = d;
+                        }
+                        if (minDist > maxOutsideDist) maxOutsideDist = minDist;
+                        if (minDist > OUTSIDE_TOLERANCE) { allValid = false; break; }
+                    }
+                    if (!allValid) break;
+                }
+
+                let pieceVertices = [];
+                for (let g of allGroups) {
+                    pieceVertices.push(getTransformedVertices(g));
+                }
+                let totalOverlap = 0,
+                    maxOverlap = 0;
+                let overlaps = [];
+                for (let i = 0; i < pieceVertices.length; i++) {
+                    for (let j = i + 1; j < pieceVertices.length; j++) {
+                        let area = computeIntersectionArea(pieceVertices[i], pieceVertices[j]);
+                        overlaps.push({ i, j, area });
+                        totalOverlap += area;
+                        if (area > maxOverlap) maxOverlap = area;
+                    }
+                }
+                let overlapDetected = false;
+                for (let o of overlaps) {
+                    if (o.area > OVERLAP_PER_PAIR) { overlapDetected = true; break; }
+                }
+                if (!overlapDetected && totalOverlap > OVERLAP_TOTAL) overlapDetected = true;
+                if (overlapDetected) {
+                    toastMsg(`❌ 拼块之间存在重叠 (最大 ${maxOverlap.toFixed(1)}，总 ${totalOverlap.toFixed(1)})`, "fail");
                     return;
                 }
-                
-                submitModal.style.display = 'none';
-                submitStatus.style.display = 'block';
-                submitStatus.innerText = '⏳ 正在生成作品截图并压缩...';
-                const imgBase64 = await generateCenteredScreenshot();
-                if (!imgBase64) { submitStatus.innerText = '❌ 截图失败，请重试'; setTimeout(()=>{ submitStatus.style.display='none'; },2000); return; }
-                submitStatus.innerText = '📤 正在上传至 QuickForm...';
-                const formData = new FormData();
-                formData.append('class', className);
-                formData.append('name', name);
-                formData.append('workName', workName);
-                formData.append('story', story);
-                formData.append('image', imgBase64);
-                formData.append('timestamp', new Date().toISOString());
-                if (currentOutlineKey) formData.append('outline', currentOutlineKey);
-                try {
-                    const resp = await fetch(QUICKFORM_API, { method: 'POST', body: formData });
-                    if (resp.ok) {
-                        submitStatus.innerText = '✅ 作品提交成功！老师将很快看到你的拼图。';
-                        setTimeout(()=>{ submitStatus.style.display='none'; },3000);
-                        studentName.value = ''; workNameInput.value = ''; storyInput.value = '';
-                        loadExhibitionData();
-                    } else {
-                        const errText = await resp.text();
-                        console.error('提交失败', errText);
-                        submitStatus.innerText = '❌ 提交失败，请稍后再试。';
-                        setTimeout(()=>{ submitStatus.style.display='none'; },2500);
-                    }
-                } catch(err) {
-                    console.error('网络错误', err);
-                    submitStatus.innerText = '❌ 网络错误，提交失败。';
-                    setTimeout(()=>{ submitStatus.style.display='none'; },2500);
+
+                let totalArea = 0;
+                for (let verts of pieceVertices) totalArea += polygonArea(verts);
+                let outlineArea = boundaryAreaFromEdges(outlineSegments);
+                if (outlineArea <= 0) outlineArea = polygonArea(outline);
+                const areaDiff = Math.abs(totalArea - outlineArea);
+                const areaTolerance = Math.max(5, outlineArea * 0.005);
+                if (areaDiff > areaTolerance) {
+                    toastMsg(`❌ 面积偏差过大 (差 ${areaDiff.toFixed(1)}，容差 ${areaTolerance.toFixed(1)})`, "fail");
+                    return;
                 }
-                modalConfirm.removeEventListener('click', confirmHandler);
-                modalCancel.removeEventListener('click', cancelHandler);
-            };
-            const cancelHandler = () => { submitModal.style.display = 'none'; };
-            modalConfirm.onclick = confirmHandler;
-            modalCancel.onclick = cancelHandler;
-        }
-        submitBtn.addEventListener('click', submitWork);
-        
-        function init(){
-            groups.forEach(g=>{ transforms[g.id]={x:INIT_POS.x,y:INIT_POS.y,rotate:0,flip:1}; updateTransform(g); g.addEventListener('mousedown',startDrag); g.addEventListener('touchstart',startDrag,{passive:false}); });
-            document.getElementById('resetPosBtn').addEventListener('click',resetAllPositions);
-            document.getElementById('rotateLeftBtn').addEventListener('click',()=>rotateSelected(-45));
-            document.getElementById('rotateRightBtn').addEventListener('click',()=>rotateSelected(45));
-            document.getElementById('flipBtn').addEventListener('click',flipSelected);
-            document.getElementById('zoomInBtn').addEventListener('click',()=>changeZoom(1.2));
-            document.getElementById('zoomOutBtn').addEventListener('click',()=>changeZoom(0.8));
-            document.getElementById('resetViewBtn').addEventListener('click',resetView);
-            clearOutlineBtn.addEventListener('click',clearOutline);
-            refreshBtn.addEventListener('click',refreshGallery);
-            svgElem.addEventListener('mousedown',startPan); svgElem.addEventListener('touchstart',startPan,{passive:false});
-            svgElem.addEventListener('wheel',handleWheel,{passive:false});
-            svgElem.addEventListener('click',clearSelectionOnBg);
-            currentNineShapes=getRandomNine(); renderButtons(currentNineShapes);
+
+                const currentEdges = getCurrentExposedEdges();
+                const boundaryCompare = compareBoundaryEdges(currentEdges, outlineSegments);
+                if (boundaryCompare.currentCount !== boundaryCompare.targetCount) {
+                    toastMsg(`❌ 轮廓边数量不一致：当前 ${boundaryCompare.currentCount} 条，目标 ${boundaryCompare.targetCount} 条`, "fail");
+                    return;
+                }
+                if (!boundaryCompare.ok) {
+                    const missingCount = boundaryCompare.unmatchedCurrent + boundaryCompare.unmatchedTarget;
+                    toastMsg(`❌ 边界不重合：有 ${missingCount} 条外露边无法匹配轮廓线`, "fail");
+                    return;
+                }
+
+                // 验证成功
+                if (isExamMode && examActive) {
+                    // 答题模式：计数+1，然后自动换题（不增加额外计数）
+                    examCount++;
+                    updateStats();
+                    if (autoTimer) clearTimeout(autoTimer);
+                    autoTimer = setTimeout(() => {
+                        generateNewPuzzle(false);
+                        autoTimer = null;
+                    }, 300);
+                    toastMsg(`✅ 拼合正确！+1 (共 ${examCount} 组)`, 'success');
+                } else {
+                    toastMsg("✅ 拼合正确：外轮廓与目标轮廓重合", "success");
+                }
+            }
+
+            // ---------- 12. Toast ----------
+            function toastMsg(text, type = 'info') {
+                toast.textContent = text;
+                toast.className = 'toast ' + type;
+                toast.style.display = 'block';
+                clearTimeout(toast._timer);
+                toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
+            }
+
+            // ---------- 13. 答题模式相关 ----------
+            function updateStats() {
+                const mins = Math.floor(examSeconds / 60);
+                const secs = examSeconds % 60;
+                timerDisplay.textContent = `⏱️ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                countDisplay.textContent = `✅ ${examCount}`;
+            }
+
+            function startExam() {
+                const classVal = document.getElementById('classSelect').value;
+                const nameVal = document.getElementById('nameInput').value.trim();
+                if (!nameVal) {
+                    toastMsg('请输入姓名', 'fail');
+                    return;
+                }
+                examClass = classVal;
+                examName = nameVal;
+                examCount = 0;
+                examSeconds = 120;
+                examActive = true;
+                isExamMode = true;
+                updateStats();
+                document.getElementById('examModal').classList.remove('active');
+
+                // 切换按钮：更换 → 跳过
+                generateBtn.textContent = '⏭️ 跳过';
+                generateBtn.classList.remove('btn-generate');
+                generateBtn.classList.add('btn-skip');
+                generateBtn.style.opacity = '1';
+                generateBtn.style.pointerEvents = 'auto';
+
+                examBtn.textContent = '⏹️ 结束答题';
+                examBtn.classList.add('active');
+
+                if (examTimer) clearInterval(examTimer);
+                examTimer = setInterval(() => {
+                    examSeconds--;
+                    updateStats();
+                    if (examSeconds <= 0) {
+                        clearInterval(examTimer);
+                        examTimer = null;
+                        endExam();
+                    }
+                }, 1000);
+                // 生成第一组拼图
+                generateNewPuzzle(false);
+                toastMsg('答题开始！拼成一组自动换新，点击"跳过"可换题', 'info');
+            }
+
+            // ---------- 结束答题：彻底结束本轮游戏 ----------
+            function endExam() {
+                // 1. 停止答题状态
+                examActive = false;
+                isExamMode = false;
+
+                // 2. 清除计时器
+                if (examTimer) {
+                    clearInterval(examTimer);
+                    examTimer = null;
+                }
+                if (autoTimer) {
+                    clearTimeout(autoTimer);
+                    autoTimer = null;
+                }
+
+                // 3. 恢复按钮样式：跳过 → 更换
+                generateBtn.textContent = '🔄 更换';
+                generateBtn.classList.remove('btn-skip');
+                generateBtn.classList.add('btn-generate');
+                generateBtn.style.opacity = '1';
+                generateBtn.style.pointerEvents = 'auto';
+
+                examBtn.textContent = '📝 答题模式';
+                examBtn.classList.remove('active');
+
+                // 4. 重置计时器显示为初始状态
+                examSeconds = 120;
+                // 保留计数显示最终成绩，但不清零（保留现场）
+                // 但为了UI干净，我们将计数保留为最终成绩，并显示在toast中
+
+                // 5. 显示最终成绩并提交
+                const msg = `⏰ 本轮游戏结束！您共拼成 ${examCount} 组！`;
+                toastMsg(msg, 'info');
+                if (examCount > 0) {
+                    sendData(examClass, examName, examCount);
+                } else {
+                    toastMsg('本轮未拼成任何组，请继续加油！', 'info');
+                }
+
+                // 6. 重置计数器显示为0（因为游戏已结束，准备普通模式）
+                examCount = 0;
+                updateStats();
+
+                // 7. 加载一个新的普通拼图（非答题模式）
+                // 延迟一点点，让toast先显示
+                setTimeout(() => {
+                    generateNewPuzzle(false);
+                }, 300);
+            }
+
+            function sendData(cls, name, score) {
+                const payload = {
+                    class: cls,
+                    name: name,
+                    score: score
+                };
+                fetch('https://wzkjgz.site/api/6frl7m3zlw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(res => res.json())
+                .then(data => {
+                    console.log('数据提交成功', data);
+                    toastMsg('📊 成绩已提交', 'success');
+                    fetchRankData();
+                })
+                .catch(err => {
+                    console.error('提交失败', err);
+                    toastMsg('❌ 成绩提交失败，请检查网络', 'fail');
+                });
+            }
+
+            // ---------- 14. 排行榜 ----------
+            function fetchRankData() {
+                rankList.innerHTML = '<div class="rank-loading">加载中...</div>';
+                Promise.all([
+                    fetch('https://wzkjgz.site/api/6frl7m3zlw/all').then(r => r.json()).catch(() => ({ submissions: [] })),
+                    fetch('https://wzkjgz.site/api/5tmbx2o6rg/all').then(r => r.json()).catch(() => ({ submissions: [] }))
+                ])
+                .then(([rankRes, whiteRes]) => {
+                    const rankSubs = rankRes.submissions || [];
+                    const whiteSubs = whiteRes.submissions || [];
+                    const whiteSet = new Set();
+                    whiteSubs.forEach(item => {
+                        const cls = item.class || '';
+                        const name = item.name || '';
+                        if (cls && name) whiteSet.add(`${cls}|${name}`);
+                    });
+                    const today = new Date().toDateString();
+                    const todaySubs = rankSubs.filter(item => {
+                        if (!item.submitted_at) return false;
+                        const d = new Date(item.submitted_at);
+                        return d.toDateString() === today;
+                    });
+                    const countMap = new Map();
+                    todaySubs.forEach(item => {
+                        const cls = item.class || '';
+                        const name = item.name || '';
+                        if (!cls || !name) return;
+                        const key = `${cls}|${name}`;
+                        if (!whiteSet.has(key)) return;
+                        if (!countMap.has(key)) {
+                            countMap.set(key, { class: cls, name: name, count: 0 });
+                        }
+                        countMap.get(key).count++;
+                    });
+                    const sorted = Array.from(countMap.values()).sort((a, b) => b.count - a.count);
+                    rankData = sorted;
+                    renderRankList(sorted);
+                })
+                .catch(err => {
+                    console.error('排行榜加载失败', err);
+                    rankList.innerHTML = '<div class="rank-empty">加载失败，请刷新重试</div>';
+                });
+            }
+
+            function renderRankList(data) {
+                if (!data || data.length === 0) {
+                    rankList.innerHTML = '<div class="rank-empty">今日暂无排行榜数据</div>';
+                    return;
+                }
+                let html = '';
+                data.forEach((item, index) => {
+                    const pos = index + 1;
+                    const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
+                    html += `
+                        <div class="rank-item">
+                            <span class="rank-pos">${medal}</span>
+                            <span class="rank-name">${item.name}</span>
+                            <span class="rank-class">${item.class}</span>
+                            <span class="rank-score">${item.count} 组</span>
+                        </div>
+                    `;
+                });
+                rankList.innerHTML = html;
+            }
+
+            // ---------- 15. 绑定控件 ----------
+            document.getElementById('resetPosBtn').addEventListener('click', resetPieces);
+            document.getElementById('resetViewBtn').addEventListener('click', resetView);
+            document.getElementById('zoomInBtn').addEventListener('click', () => changeZoom(1.2));
+            document.getElementById('zoomOutBtn').addEventListener('click', () => changeZoom(0.8));
+            document.getElementById('rotateLeftBtn').addEventListener('click', () => rotateSelected(-45));
+            document.getElementById('rotateRightBtn').addEventListener('click', () => rotateSelected(45));
+            document.getElementById('flipBtn').addEventListener('click', flipSelected);
+            document.getElementById('submitBtn').addEventListener('click', verifyPuzzle);
+
+            // 更换/跳过按钮：根据模式决定行为
+            generateBtn.addEventListener('click', function() {
+                if (isExamMode && examActive) {
+                    // 答题模式下：跳过本题（不计数）
+                    generateNewPuzzle(true);
+                } else {
+                    // 非答题模式：更换
+                    generateNewPuzzle(false);
+                }
+            });
+
+            // 点击结束答题：直接退出，不弹确认框
+            examBtn.addEventListener('click', function() {
+                if (examActive) {
+                    // 直接结束，无确认对话框
+                    endExam();
+                } else {
+                    document.getElementById('examModal').classList.add('active');
+                }
+            });
+
+            document.getElementById('startExamBtn').addEventListener('click', startExam);
+            document.getElementById('closeModalBtn').addEventListener('click', function() {
+                document.getElementById('examModal').classList.remove('active');
+            });
+            document.getElementById('examModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+
+            document.getElementById('rankRefreshBtn').addEventListener('click', fetchRankData);
+
+            svgElem.addEventListener('mousedown', startPan);
+            svgElem.addEventListener('touchstart', startPan, { passive: false });
+            svgElem.addEventListener('wheel', handleWheel, { passive: false });
+
+            let lastTap = 0;
+            document.addEventListener('touchend', (e) => {
+                let now = Date.now();
+                let diff = now - lastTap;
+                if (diff < 300 && e.target.closest('.draggable-group')) {
+                    let id = e.target.closest('.draggable-group').id;
+                    if (transforms[id]) { rotatePiece(document.getElementById(id), 45); }
+                }
+                lastTap = now;
+            }, { passive: false });
+
+            // 初始化
+            setTimeout(() => {
+                generateNewPuzzle(false);
+                fetchRankData();
+            }, 100);
             updateViewport();
-            loadExhibitionData();
-        }
-        init();
-    })();
-</script>
+            updateStats();
+        })();
+    </script>
 </body>
 </html>
