@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>七巧板拼图</title>
     <style>
+        /* ... (样式保持不变) ... */
         * {
             margin: 0;
             padding: 0;
@@ -380,11 +381,16 @@
         .rank-item {
             display: flex;
             justify-content: space-between;
-            padding: 4px 8px;
+            align-items: center;
+            padding: 6px 10px;
             border-radius: 8px;
             font-size: 14px;
             background: #FCFCFC;
             transition: background 0.15s;
+            border-bottom: 1px solid #F3F5F3;
+        }
+        .rank-item:last-child {
+            border-bottom: none;
         }
         .rank-item:nth-child(1) { background: #FFF8E7; }
         .rank-item:nth-child(2) { background: #F5F5F5; }
@@ -392,23 +398,43 @@
         .rank-item .rank-pos {
             font-weight: 700;
             color: #888;
-            width: 30px;
-            text-align: right;
+            width: 32px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .rank-item .rank-info {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 10px;
+            min-width: 0;
         }
         .rank-item .rank-name {
-            flex: 1;
-            padding: 0 12px;
-            font-weight: 500;
+            font-weight: 600;
             color: #1E3A2F;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .rank-item .rank-class {
             color: #666;
             font-size: 13px;
-            margin-right: 12px;
+            background: #EFF3F0;
+            padding: 1px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .rank-item .rank-score {
             font-weight: 700;
             color: #4A7A6C;
+            background: #E8F0EC;
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
         .rank-empty {
             text-align: center;
@@ -423,7 +449,7 @@
             font-size: 14px;
         }
 
-        /* ===== 移动端适配 ===== */
+        /* 移动端适配 */
         @media (max-width: 768px) {
             .global-header {
                 height: 44px;
@@ -480,17 +506,23 @@
             }
             .rank-item {
                 font-size: 12px;
-                padding: 2px 4px;
+                padding: 4px 6px;
             }
             .rank-item .rank-pos {
                 width: 24px;
+                font-size: 12px;
             }
-            .rank-item .rank-name {
-                padding: 0 6px;
+            .rank-item .rank-info {
+                gap: 6px;
+                padding: 0 4px;
             }
             .rank-item .rank-class {
                 font-size: 11px;
-                margin-right: 6px;
+                padding: 0 8px;
+            }
+            .rank-item .rank-score {
+                font-size: 12px;
+                padding: 1px 10px;
             }
             .modal-box {
                 padding: 24px 20px;
@@ -501,8 +533,6 @@
                 top: 10px;
             }
         }
-
-        /* 针对更小屏（如 iPhone SE）额外微调 */
         @media (max-width: 400px) {
             .btn {
                 padding: 2px 6px;
@@ -512,6 +542,13 @@
             .float-controls {
                 gap: 3px;
                 padding: 3px 6px;
+            }
+            .rank-item .rank-name {
+                font-size: 11px;
+            }
+            .rank-item .rank-score {
+                font-size: 10px;
+                padding: 1px 6px;
             }
         }
     </style>
@@ -1040,9 +1077,9 @@
             let examName = '';
             let examActive = false;
 
-            // 排行榜数据缓存
-            let rankData = [];
-            let whitelistData = [];
+            // 白名单缓存
+            let whiteListSet = null;
+            let whiteListLoaded = false;
 
             // ---------- 7. 交互逻辑 ----------
             function getSVGPoint(cx, cy) {
@@ -1498,21 +1535,14 @@
                     g.addEventListener('touchstart', startDrag, { passive: false });
                 }
                 resetPieces();
-                // 只在非答题模式或答题模式首次加载时显示提示
                 if (!isExamMode || !examActive) {
                     toastMsg(`加载拼图：${task.name}`, 'success');
-                } else {
-                    // 答题模式下静默加载
                 }
             }
 
-            // ---------- 10. 生成新拼图（答题模式为“跳过”功能） ----------
+            // ---------- 10. 生成新拼图 ----------
             function generateNewPuzzle(isSkip = false) {
                 if (generateBtn.disabled) return;
-
-                // 答题模式下，点击“跳过”或验证成功自动换题都走这里
-                // isSkip 用于区分手动点击跳过（true）和自动换题（false）
-
                 if (autoTimer) {
                     clearTimeout(autoTimer);
                     autoTimer = null;
@@ -1773,7 +1803,6 @@
 
                 // 验证成功
                 if (isExamMode && examActive) {
-                    // 答题模式：计数+1，然后自动换题（不增加额外计数）
                     examCount++;
                     updateStats();
                     if (autoTimer) clearTimeout(autoTimer);
@@ -1783,7 +1812,6 @@
                     }, 300);
                     toastMsg(`✅ 拼合正确！+1 (共 ${examCount} 组)`, 'success');
                 } else {
-                    // 非答题模式：显示成功消息，等待1秒后自动换题
                     toastMsg("✅ 拼合正确：外轮廓与目标轮廓重合", "success");
                     if (autoTimer) clearTimeout(autoTimer);
                     autoTimer = setTimeout(() => {
@@ -1802,7 +1830,7 @@
                 toast._timer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
             }
 
-            // ---------- 13. 答题模式相关 ----------
+            // ---------- 13. 答题模式 ----------
             function updateStats() {
                 const mins = Math.floor(examSeconds / 60);
                 const secs = examSeconds % 60;
@@ -1810,13 +1838,63 @@
                 countDisplay.textContent = `✅ ${examCount}`;
             }
 
-            function startExam() {
+            // 获取白名单并缓存
+            function fetchWhitelist() {
+                return fetch('https://wzkjgz.site/api/5tmbx2o6rg/all')
+                    .then(r => r.json())
+                    .catch(() => ({ submissions: [] }))
+                    .then(whiteRes => {
+                        const whiteSubs = extractData(whiteRes);
+                        const whiteSet = new Set();
+                        whiteSubs.forEach(item => {
+                            let cls = item.class || item.class_name || item.grade || item.classId || '';
+                            const name = item.name || item.student_name || item.username || item.student || '';
+                            if (cls && name) {
+                                cls = String(cls).replace(/班/g, '').trim();
+                                whiteSet.add(`${cls}|${name.trim()}`);
+                            }
+                        });
+                        whiteListSet = whiteSet;
+                        whiteListLoaded = true;
+                        return whiteSet;
+                    });
+            }
+
+            function extractData(res) {
+                if (Array.isArray(res)) return res;
+                if (res && res.submissions && Array.isArray(res.submissions)) return res.submissions;
+                if (res && res.data && Array.isArray(res.data)) return res.data;
+                return [];
+            }
+
+            // 开始答题（含白名单验证）
+            async function startExam() {
                 const classVal = document.getElementById('classSelect').value;
                 const nameVal = document.getElementById('nameInput').value.trim();
                 if (!nameVal) {
                     toastMsg('请输入姓名', 'fail');
                     return;
                 }
+
+                // 确保白名单已加载
+                if (!whiteListLoaded) {
+                    toastMsg('正在验证身份，请稍候...', 'info');
+                    try {
+                        await fetchWhitelist();
+                    } catch (e) {
+                        toastMsg('白名单加载失败，请检查网络', 'fail');
+                        return;
+                    }
+                }
+
+                // 验证是否在白名单中
+                const key = `${classVal}|${nameVal}`;
+                if (!whiteListSet.has(key)) {
+                    toastMsg(`❌ 您不在白名单中，无法开始答题`, 'fail');
+                    return;
+                }
+
+                // 通过验证，开始答题
                 examClass = classVal;
                 examName = nameVal;
                 examCount = 0;
@@ -1826,7 +1904,6 @@
                 updateStats();
                 document.getElementById('examModal').classList.remove('active');
 
-                // 切换按钮：更换 → 跳过
                 generateBtn.textContent = '⏭️ 跳过';
                 generateBtn.classList.remove('btn-generate');
                 generateBtn.classList.add('btn-skip');
@@ -1846,18 +1923,14 @@
                         endExam();
                     }
                 }, 1000);
-                // 生成第一组拼图
                 generateNewPuzzle(false);
                 toastMsg('答题开始！拼成一组自动换新，点击"跳过"可换题', 'info');
             }
 
-            // ---------- 结束答题：彻底结束本轮游戏 ----------
             function endExam() {
-                // 1. 停止答题状态
                 examActive = false;
                 isExamMode = false;
 
-                // 2. 清除计时器
                 if (examTimer) {
                     clearInterval(examTimer);
                     examTimer = null;
@@ -1867,7 +1940,6 @@
                     autoTimer = null;
                 }
 
-                // 3. 恢复按钮样式：跳过 → 更换
                 generateBtn.textContent = '🔄 更换';
                 generateBtn.classList.remove('btn-skip');
                 generateBtn.classList.add('btn-generate');
@@ -1877,12 +1949,7 @@
                 examBtn.textContent = '📝 答题模式';
                 examBtn.classList.remove('active');
 
-                // 4. 重置计时器显示为初始状态
                 examSeconds = 120;
-                // 保留计数显示最终成绩，但不清零（保留现场）
-                // 但为了UI干净，我们将计数保留为最终成绩，并显示在toast中
-
-                // 5. 显示最终成绩并提交
                 const msg = `⏰ 本轮游戏结束！您共拼成 ${examCount} 组！`;
                 toastMsg(msg, 'info');
                 if (examCount > 0) {
@@ -1891,12 +1958,8 @@
                     toastMsg('本轮未拼成任何组，请继续加油！', 'info');
                 }
 
-                // 6. 重置计数器显示为0（因为游戏已结束，准备普通模式）
                 examCount = 0;
                 updateStats();
-
-                // 7. 加载一个新的普通拼图（非答题模式）
-                // 延迟一点点，让toast先显示
                 setTimeout(() => {
                     generateNewPuzzle(false);
                 }, 300);
@@ -1933,34 +1996,55 @@
                     fetch('https://wzkjgz.site/api/5tmbx2o6rg/all').then(r => r.json()).catch(() => ({ submissions: [] }))
                 ])
                 .then(([rankRes, whiteRes]) => {
-                    const rankSubs = rankRes.submissions || [];
-                    const whiteSubs = whiteRes.submissions || [];
+                    const rankSubs = extractData(rankRes);
+                    const whiteSubs = extractData(whiteRes);
+
+                    // 构建白名单 Set
                     const whiteSet = new Set();
                     whiteSubs.forEach(item => {
-                        const cls = item.class || '';
-                        const name = item.name || '';
-                        if (cls && name) whiteSet.add(`${cls}|${name}`);
+                        let cls = item.class || item.class_name || item.grade || item.classId || '';
+                        const name = item.name || item.student_name || item.username || item.student || '';
+                        if (cls && name) {
+                            cls = String(cls).replace(/班/g, '').trim();
+                            whiteSet.add(`${cls}|${name.trim()}`);
+                        }
                     });
+                    whiteListSet = whiteSet;
+                    whiteListLoaded = true;
+
+                    // 今日数据
                     const today = new Date().toDateString();
                     const todaySubs = rankSubs.filter(item => {
                         if (!item.submitted_at) return false;
                         const d = new Date(item.submitted_at);
                         return d.toDateString() === today;
                     });
+
+                    // 按 班级+姓名 分组统计 score 总和
                     const countMap = new Map();
                     todaySubs.forEach(item => {
-                        const cls = item.class || '';
-                        const name = item.name || '';
+                        let cls = item.class || item.class_name || item.grade || item.classId || '';
+                        const name = item.name || item.student_name || item.username || item.student || '';
                         if (!cls || !name) return;
-                        const key = `${cls}|${name}`;
+                        cls = String(cls).replace(/班/g, '').trim();
+                        const key = `${cls}|${name.trim()}`;
                         if (!whiteSet.has(key)) return;
                         if (!countMap.has(key)) {
-                            countMap.set(key, { class: cls, name: name, count: 0 });
+                            countMap.set(key, { 
+                                class: cls, 
+                                name: name.trim(), 
+                                count: 0
+                            });
                         }
-                        countMap.get(key).count++;
+                        // 累加 score（验证成功的拼图数量）
+                        const score = parseInt(item.score) || 0;
+                        countMap.get(key).count += score;
                     });
+
+                    // 按拼图数量降序排列
                     const sorted = Array.from(countMap.values()).sort((a, b) => b.count - a.count);
-                    rankData = sorted;
+
+                    // 渲染排行榜
                     renderRankList(sorted);
                 })
                 .catch(err => {
@@ -1977,12 +2061,19 @@
                 let html = '';
                 data.forEach((item, index) => {
                     const pos = index + 1;
-                    const medal = pos === 1 ? '🥇' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : `#${pos}`;
+                    let medal = '';
+                    if (pos === 1) medal = '🥇';
+                    else if (pos === 2) medal = '🥈';
+                    else if (pos === 3) medal = '🥉';
+                    else medal = `#${pos}`;
+                    
                     html += `
                         <div class="rank-item">
                             <span class="rank-pos">${medal}</span>
-                            <span class="rank-name">${item.name}</span>
-                            <span class="rank-class">${item.class}</span>
+                            <div class="rank-info">
+                                <span class="rank-name">${item.name}</span>
+                                <span class="rank-class">${item.class}班</span>
+                            </div>
                             <span class="rank-score">${item.count} 组</span>
                         </div>
                     `;
@@ -1990,7 +2081,7 @@
                 rankList.innerHTML = html;
             }
 
-            // ---------- 15. 绑定控件 ----------
+            // ---------- 15. 事件绑定 ----------
             document.getElementById('resetPosBtn').addEventListener('click', resetPieces);
             document.getElementById('resetViewBtn').addEventListener('click', resetView);
             document.getElementById('zoomInBtn').addEventListener('click', () => changeZoom(1.2));
@@ -2000,21 +2091,16 @@
             document.getElementById('flipBtn').addEventListener('click', flipSelected);
             document.getElementById('submitBtn').addEventListener('click', verifyPuzzle);
 
-            // 更换/跳过按钮：根据模式决定行为
             generateBtn.addEventListener('click', function() {
                 if (isExamMode && examActive) {
-                    // 答题模式下：跳过本题（不计数）
                     generateNewPuzzle(true);
                 } else {
-                    // 非答题模式：更换
                     generateNewPuzzle(false);
                 }
             });
 
-            // 点击结束答题：直接退出，不弹确认框
             examBtn.addEventListener('click', function() {
                 if (examActive) {
-                    // 直接结束，无确认对话框
                     endExam();
                 } else {
                     document.getElementById('examModal').classList.add('active');
