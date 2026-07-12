@@ -1989,7 +1989,13 @@
             }
 
             // ---------- 14. 排行榜 ----------
-            function fetchRankData() {
+                        function getBeijingTodayStr() {
+                var d = new Date();
+                d.setTime(d.getTime() + 8 * 3600 * 1000);
+                return d.toISOString().slice(0, 10);
+            }
+
+function fetchRankData() {
                 rankList.innerHTML = '<div class="rank-loading">加载中...</div>';
                 Promise.all([
                     fetch('https://wzkjgz.site/api/6frl7m3zlw/all').then(r => r.json()).catch(() => ({ submissions: [] })),
@@ -2013,11 +2019,11 @@
                     whiteListLoaded = true;
 
                     // 今日数据
-                    const today = new Date().toDateString();
+                    const today = getBeijingTodayStr();
                     const todaySubs = rankSubs.filter(item => {
                         if (!item.submitted_at) return false;
-                        const d = new Date(item.submitted_at);
-                        return d.toDateString() === today;
+                        const dateStr = item.submitted_at || '';
+                        return dateStr.slice(0, 10) === today;
                     });
 
                     // 按 班级+姓名 分组统计 score 总和
