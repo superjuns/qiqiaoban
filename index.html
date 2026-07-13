@@ -598,6 +598,7 @@
                 <button class="btn btn-outline" id="flipBtn">🪞 翻转</button>
                 <button class="btn btn-success" id="submitBtn">📤 验证拼图</button>
                 <button class="btn btn-generate" id="generateBtn">🔄 更换</button>
+                <button class="btn btn-outline" id="modeBtn">🎲 随机模式</button>
                 <button class="btn btn-exam" id="examBtn">📝 答题模式</button>
             </div>
         </div>
@@ -671,6 +672,35 @@
             const PIECE_EDGES = {};
             for (let id in PIECE_DEFS) {
                 PIECE_EDGES[id] = getEdges(PIECE_DEFS[id].pts);
+            }
+
+            // ---------- 1.5 预设题库 ----------
+            const PRESET_PUZZLES = []; // 题库在下方动态填充
+            let puzzleMode = 'random'; // 'random' 或 'library'
+            let libraryIndex = 0;
+            let libraryShuffled = [];
+
+            function shuffleLibrary() {
+                libraryShuffled = PRESET_PUZZLES.map((_, i) => i);
+                for (let i = libraryShuffled.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [libraryShuffled[i], libraryShuffled[j]] = [libraryShuffled[j], libraryShuffled[i]];
+                }
+                libraryIndex = 0;
+            }
+
+            function getNextLibraryPuzzle() {
+                if (libraryShuffled.length === 0) shuffleLibrary();
+                const idx = libraryShuffled[libraryIndex % libraryShuffled.length];
+                libraryIndex++;
+                const p = PRESET_PUZZLES[idx];
+                return {
+                    id: 'preset_' + idx + '_' + Date.now(),
+                    name: p.name,
+                    desc: '七巧板经典造型',
+                    outline: p.outline,
+                    solution: p.solution
+                };
             }
 
             // ---------- 2. 几何工具 ----------
@@ -1633,7 +1663,12 @@
                 generateBtn.disabled = true;
                 setTimeout(() => {
                     try {
-                        const task = generateRandomPuzzle();
+                        let task;
+                        if (puzzleMode === 'library') {
+                            task = getNextLibraryPuzzle();
+                        } else {
+                            task = generateRandomPuzzle();
+                        }
                         if (task) {
                             loadTask(task);
                             if (isSkip && isExamMode && examActive) {
@@ -2185,6 +2220,21 @@ function fetchRankData() {
                 }
             });
 
+            const modeBtn = document.getElementById('modeBtn');
+            modeBtn.addEventListener('click', function() {
+                if (puzzleMode === 'random') {
+                    puzzleMode = 'library';
+                    modeBtn.textContent = '📚 题库模式';
+                    shuffleLibrary();
+                    toastMsg('已切换到题库模式（24道经典题)', 'info');
+                } else {
+                    puzzleMode = 'random';
+                    modeBtn.textContent = '🎲 随机模式';
+                    toastMsg('已切换到随机生成模式', 'info');
+                }
+                generateNewPuzzle(false);
+            });
+
             document.getElementById('startExamBtn').addEventListener('click', startExam);
             document.getElementById('closeModalBtn').addEventListener('click', function() {
                 document.getElementById('examModal').classList.remove('active');
@@ -2208,6 +2258,20 @@ function fetchRankData() {
                     localStorage.setItem('qiqiaoban_guided', '1');
                 }, 800);
             }
+
+            // 填充预设题库（24道经典造型）
+            (function fillPuzzles() {
+                const names = ['方方正正','小山坡','战斗机','宝塔','长桥','钻石','大风筝','飞镖','小方台','大方阵','小尖塔','扁舟','巨人','古塔','方尖碑','平行阵','钟楼','梯形台','火箭','城堡','小山丘','长矛','摩天楼','拱门'];
+                // 题库数据由生成脚本产出，24种不同轮廓
+                const puzzleData = [{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":400,"y":400},{"x":600,"y":600},{"x":800,"y":400},{"x":600,"y":200},{"x":300,"y":300},{"x":300,"y":500},{"x":200,"y":400},{"x":500,"y":100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":500,"y":300,"rotate":-90,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p2":{"x":400,"y":200,"rotate":180,"flip":1},"p4":{"x":0,"y":200,"rotate":180,"flip":1}}},{"outline":[{"x":800,"y":400},{"x":400,"y":400},{"x":600,"y":600}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":0,"flip":-1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":0,"y":200},{"x":-100,"y":100},{"x":100,"y":100},{"x":600,"y":200},{"x":400,"y":400},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":0,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":0,"y":200},{"x":-100,"y":100},{"x":100,"y":100},{"x":200,"y":600},{"x":400,"y":400},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":0,"flip":-1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p1":{"x":200,"y":200,"rotate":180,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":400,"y":200},{"x":400,"y":400},{"x":800,"y":400},{"x":600,"y":600},{"x":600,"y":200},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":400,"y":200},{"x":400,"y":400},{"x":800,"y":400},{"x":600,"y":600},{"x":200,"y":600},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":0},{"x":0,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p4":{"x":-300,"y":-100,"rotate":-180,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p1":{"x":200,"y":200,"rotate":180,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":400,"y":200},{"x":400,"y":400},{"x":600,"y":200},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1}}},{"outline":[{"x":400,"y":400},{"x":600,"y":600},{"x":800,"y":400},{"x":600,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p1":{"x":500,"y":300,"rotate":-90,"flip":-1},"p2":{"x":400,"y":200,"rotate":180,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1}}},{"outline":[{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":400,"y":200},{"x":300,"y":300},{"x":300,"y":500}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1}}},{"outline":[{"x":200,"y":200},{"x":300,"y":300},{"x":300,"y":500}],"solution":{"p5":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":-100,"y":100,"rotate":270,"flip":1},"p2":{"x":0,"y":400,"rotate":-90,"flip":1},"p1":{"x":100,"y":300,"rotate":0,"flip":1},"p6":{"x":300,"y":0,"rotate":360,"flip":-1},"p3":{"x":50,"y":250,"rotate":90,"flip":-1},"p4":{"x":200,"y":200,"rotate":-90,"flip":1}}},{"outline":[{"x":400,"y":400},{"x":200,"y":400},{"x":400,"y":600},{"x":0,"y":600},{"x":600,"y":400},{"x":400,"y":200},{"x":300,"y":300},{"x":300,"y":500}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p6":{"x":200,"y":0,"rotate":-90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":500,"y":500},{"x":700,"y":500},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p6":{"x":400,"y":100,"rotate":180,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":600,"y":200},{"x":400,"y":400},{"x":800,"y":400},{"x":600,"y":600},{"x":300,"y":500},{"x":300,"y":300},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":600,"y":400},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p6":{"x":400,"y":100,"rotate":180,"flip":-1}}},{"outline":[{"x":300,"y":500},{"x":300,"y":300},{"x":400,"y":200},{"x":600,"y":400},{"x":200,"y":400},{"x":400,"y":400}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":500,"y":100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p6":{"x":400,"y":100,"rotate":360,"flip":-1},"p4":{"x":300,"y":300,"rotate":90,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1}}},{"outline":[{"x":200,"y":200},{"x":300,"y":300},{"x":300,"y":500},{"x":100,"y":700},{"x":100,"y":300}],"solution":{"p5":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":-100,"y":100,"rotate":270,"flip":1},"p2":{"x":0,"y":400,"rotate":-90,"flip":1},"p6":{"x":300,"y":0,"rotate":360,"flip":-1},"p3":{"x":50,"y":250,"rotate":90,"flip":-1},"p4":{"x":100,"y":100,"rotate":-180,"flip":1},"p1":{"x":0,"y":200,"rotate":-90,"flip":1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":600,"y":400},{"x":200,"y":400},{"x":400,"y":400},{"x":300,"y":500},{"x":300,"y":300},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":200},{"x":200,"y":600},{"x":400,"y":400},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":200,"y":200,"rotate":180,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":300,"y":300},{"x":200,"y":400},{"x":100,"y":300},{"x":100,"y":100}],"solution":{"p5":{"x":0,"y":0,"rotate":0,"flip":1},"p3":{"x":-150,"y":250,"rotate":270,"flip":1},"p7":{"x":100,"y":100,"rotate":180,"flip":-1},"p6":{"x":0,"y":-100,"rotate":90,"flip":1},"p4":{"x":-200,"y":200,"rotate":180,"flip":1},"p2":{"x":500,"y":500,"rotate":0,"flip":-1},"p1":{"x":400,"y":200,"rotate":-270,"flip":1}}},{"outline":[{"x":400,"y":400},{"x":300,"y":500},{"x":300,"y":300},{"x":400,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p6":{"x":200,"y":0,"rotate":-90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":300,"y":100,"rotate":-90,"flip":1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":300,"y":300},{"x":300,"y":500},{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p6":{"x":200,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":400,"y":600},{"x":0,"y":600},{"x":600,"y":400},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p6":{"x":400,"y":-200,"rotate":270,"flip":-1}}}];
+                for (let i = 0; i < puzzleData.length; i++) {
+                    PRESET_PUZZLES.push({
+                        name: names[i] || ('第' + (i+1) + '题'),
+                        outline: puzzleData[i].outline,
+                        solution: puzzleData[i].solution
+                    });
+                }
+            })();
 
             // 初始化
             setTimeout(() => {
