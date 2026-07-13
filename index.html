@@ -580,6 +580,7 @@
             <svg id="mainSvg" viewBox="0 0 1200 800" style="touch-action: none;">
                 <g id="viewportGroup">
                     <g id="outlineLayer"></g>
+                    <g id="hintLayer"></g>
                     <g id="piecesGroup"></g>
                 </g>
             </svg>
@@ -596,6 +597,7 @@
                 <button class="btn btn-outline" id="rotateLeftBtn">↺ -45</button>
                 <button class="btn btn-outline" id="rotateRightBtn">↻ +45</button>
                 <button class="btn btn-outline" id="flipBtn">🪞 翻转</button>
+                <button class="btn btn-outline" id="hintBtn">💡 提示</button>
                 <button class="btn btn-success" id="submitBtn">📤 验证拼图</button>
                 <button class="btn btn-generate" id="generateBtn">🔄 更换</button>
                 <button class="btn btn-exam" id="examBtn">📝 答题模式</button>
@@ -1138,6 +1140,7 @@
             const viewportGroup = document.getElementById('viewportGroup');
             const piecesGroup = document.getElementById('piecesGroup');
             const outlineLayer = document.getElementById('outlineLayer');
+            const hintLayer = document.getElementById('hintLayer');
             const toast = document.getElementById('toastMessage');
             const zoomSpan = document.getElementById('zoomLevel');
             const generateBtn = document.getElementById('generateBtn');
@@ -1662,6 +1665,14 @@
             function loadTask(task) {
                 currentTask = task;
                 drawPieceOutlines(task);
+                // 重置提示状态
+                hintVisible = false;
+                hintLayer.innerHTML = '';
+                const hintBtn = document.getElementById('hintBtn');
+                if (hintBtn) {
+                    hintBtn.style.background = '';
+                    hintBtn.style.color = '';
+                }
                 piecesGroup.innerHTML = '';
                 for (let id in PIECE_DEFS) {
                     let g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -1889,6 +1900,49 @@
                 let area = 0;
                 for (let loop of loops) area += polygonArea(loop);
                 return area;
+            }
+
+            // ---------- 11. 提示功能 ----------
+            let hintVisible = false;
+
+            function drawHint(task) {
+                hintLayer.innerHTML = '';
+                if (!task || !task.solution) return;
+
+                for (let id in task.solution) {
+                    const transform = task.solution[id];
+                    const verts = getTransformedVerts(id, transform);
+                    if (verts.length < 3) continue;
+
+                    const pointsStr = verts.map(v => `${v.x},${v.y}`).join(' ');
+                    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poly.setAttribute('points', pointsStr);
+                    poly.setAttribute('fill', PIECE_DEFS[id].fill);
+                    poly.setAttribute('fill-opacity', '0.3');
+                    poly.setAttribute('stroke', PIECE_DEFS[id].fill);
+                    poly.setAttribute('stroke-width', '2');
+                    poly.setAttribute('stroke-opacity', '0.5');
+                    hintLayer.appendChild(poly);
+                }
+            }
+
+            function toggleHint() {
+                if (!currentTask) {
+                    toastMsg("请先生成一个拼图！", "fail");
+                    return;
+                }
+                hintVisible = !hintVisible;
+                const hintBtn = document.getElementById('hintBtn');
+                if (hintVisible) {
+                    drawHint(currentTask);
+                    hintBtn.style.background = '#FFC107';
+                    hintBtn.style.color = 'white';
+                    toastMsg("💡 已显示提示", 'info');
+                } else {
+                    hintLayer.innerHTML = '';
+                    hintBtn.style.background = '';
+                    hintBtn.style.color = '';
+                }
             }
 
             function verifyPuzzle() {
@@ -2252,6 +2306,7 @@ function fetchRankData() {
             document.getElementById('rotateLeftBtn').addEventListener('click', () => rotateSelected(-45));
             document.getElementById('rotateRightBtn').addEventListener('click', () => rotateSelected(45));
             document.getElementById('flipBtn').addEventListener('click', flipSelected);
+            document.getElementById('hintBtn').addEventListener('click', toggleHint);
             document.getElementById('submitBtn').addEventListener('click', verifyPuzzle);
 
             generateBtn.addEventListener('click', function() {
