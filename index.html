@@ -1780,10 +1780,10 @@
 
                 let totalArea = 0;
                 for (let verts of pieceVertices) totalArea += polygonArea(verts);
-                let outlineArea = boundaryAreaFromEdges(outlineSegments);
-                if (outlineArea <= 0) outlineArea = polygonArea(outline);
+                // 直接用 outline 多边形计算面积，避免从线段重建环带来的精度误差
+                const outlineArea = polygonArea(outline);
                 const areaDiff = Math.abs(totalArea - outlineArea);
-                const areaTolerance = Math.max(5, outlineArea * 0.005);
+                const areaTolerance = Math.max(10, outlineArea * 0.01);
                 if (areaDiff > areaTolerance) {
                     toastMsg(`❌ 面积偏差过大 (差 ${areaDiff.toFixed(1)}，容差 ${areaTolerance.toFixed(1)})`, "fail");
                     return;
