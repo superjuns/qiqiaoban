@@ -598,7 +598,6 @@
                 <button class="btn btn-outline" id="flipBtn">🪞 翻转</button>
                 <button class="btn btn-success" id="submitBtn">📤 验证拼图</button>
                 <button class="btn btn-generate" id="generateBtn">🔄 更换</button>
-                <button class="btn btn-outline" id="modeBtn">🎲 随机模式</button>
                 <button class="btn btn-exam" id="examBtn">📝 答题模式</button>
             </div>
         </div>
@@ -674,34 +673,6 @@
                 PIECE_EDGES[id] = getEdges(PIECE_DEFS[id].pts);
             }
 
-            // ---------- 1.5 预设题库 ----------
-            const PRESET_PUZZLES = []; // 题库在下方动态填充
-            let puzzleMode = 'random'; // 'random' 或 'library'
-            let libraryIndex = 0;
-            let libraryShuffled = [];
-
-            function shuffleLibrary() {
-                libraryShuffled = PRESET_PUZZLES.map((_, i) => i);
-                for (let i = libraryShuffled.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [libraryShuffled[i], libraryShuffled[j]] = [libraryShuffled[j], libraryShuffled[i]];
-                }
-                libraryIndex = 0;
-            }
-
-            function getNextLibraryPuzzle() {
-                if (libraryShuffled.length === 0) shuffleLibrary();
-                const idx = libraryShuffled[libraryIndex % libraryShuffled.length];
-                libraryIndex++;
-                const p = PRESET_PUZZLES[idx];
-                return {
-                    id: 'preset_' + idx + '_' + Date.now(),
-                    name: p.name,
-                    desc: '七巧板经典造型',
-                    outline: p.outline,
-                    solution: p.solution
-                };
-            }
 
             // ---------- 2. 几何工具 ----------
             function polygonArea(verts) {
@@ -889,81 +860,155 @@
 
             // ---------- 4. 布尔并集提取外轮廓 ----------
             function extractOutline(transforms) {
-                let allEdges = [];
-                for (let id in transforms) {
-                    const verts = getTransformedVerts(id, transforms[id]);
-                    for (let i = 0; i < verts.length; i++) {
-                        const j = (i + 1) % verts.length;
-                        allEdges.push({ id, v1: verts[i], v2: verts[j], used: false });
+                const GRID = 2; // 网格精度，单位像素
+                const ids = Object.keys(transforms);
+                const vertsList = ids.map(id => getTransformedVerts(id, transforms[id]));
+
+                // 计算整体包围盒
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                for (let verts of vertsList) {
+                    for (let v of verts) {
+                        if (v.x < minX) minX = v.x;
+                        if (v.x > maxX) maxX = v.x;
+                        if (v.y < minY) minY = v.y;
+                        if (v.y > maxY) maxY = v.y;
                     }
                 }
-                for (let i = 0; i < allEdges.length; i++) {
-                    for (let j = i + 1; j < allEdges.length; j++) {
-                        const e1 = allEdges[i],
-                            e2 = allEdges[j];
-                        const d1 = Math.hypot(e1.v1.x - e2.v1.x, e1.v1.y - e2.v1.y);
-                        const d2 = Math.hypot(e1.v2.x - e2.v2.x, e1.v2.y - e2.v2.y);
-                        const d3 = Math.hypot(e1.v1.x - e2.v2.x, e1.v1.y - e2.v2.y);
-                        const d4 = Math.hypot(e1.v2.x - e2.v1.x, e1.v2.y - e2.v1.y);
-                        if ((d1 < EPS && d2 < EPS) || (d3 < EPS && d4 < EPS)) {
-                            e1.used = true;
-                            e2.used = true;
+                // 扩展1像素边界
+                minX -= 2; maxX += 2; minY -= 2; maxY += 2;
+
+                const cols = Math.ceil((maxX - minX) / GRID) + 1;
+                const rows = Math.ceil((maxY - minY) / GRID) + 1;
+
+                // 光栅化：对每个网格中心点，判断是否在任一多边形内
+                const grid = new Uint8Array(cols * rows);
+                for (let r = 0; r < rows; r++) {
+                    const y = minY + r * GRID;
+                    for (let c = 0; c < cols; c++) {
+                        const x = minX + c * GRID;
+                        let inside = false;
+                        for (let verts of vertsList) {
+                            if (pointInPolygon({ x, y }, verts)) { inside = true; break; }
+                        }
+                        grid[r * cols + c] = inside ? 1 : 0;
+                    }
+                }
+
+                // Marching Squares 提取等值线（0.5）
+                // 收集所有轮廓线段
+                const segMap = new Map();
+                function segKey(x1, y1, x2, y2) {
+                    if (x1 < x2 || (x1 === x2 && y1 < y2)) {
+                        return x1 + ',' + y1 + '-' + x2 + ',' + y2;
+                    }
+                    return x2 + ',' + y2 + '-' + x1 + ',' + y1;
+                }
+                function addSeg(x1, y1, x2, y2) {
+                    const k = segKey(x1, y1, x2, y2);
+                    if (segMap.has(k)) return; // 去重
+                    segMap.set(k, { v1: { x: x1, y: y1 }, v2: { x: x2, y: y2 } });
+                }
+
+                // 线性插值找0.5等值点
+                function interp(a, b) {
+                    // a和b是0或1，0.5等值点在中间（因为值只有0和1，所以固定在中点
+                    return 0.5;
+                }
+
+                for (let r = 0; r < rows - 1; r++) {
+                    for (let c = 0; c < cols - 1; c++) {
+                        const tl = grid[r * cols + c];
+                        const tr = grid[r * cols + c + 1];
+                        const bl = grid[(r + 1) * cols + c];
+                        const br = grid[(r + 1) * cols + c + 1];
+                        const idx = (tl << 3) | (tr << 2) | (br << 1) | bl;
+                        if (idx === 0 || idx === 15) continue;
+
+                        const x0 = minX + c * GRID;
+                        const y0 = minY + r * GRID;
+                        const x1 = x0 + GRID;
+                        const y1 = y0 + GRID;
+                        const mx = x0 + GRID / 2; // 中点x
+                        const my = y0 + GRID / 2; // 中点y
+
+                        // 各边的0.5等值点（因为值是0/1，所以都在中点
+                        const top = { x: mx, y: y0 };      // 上边中点
+                        const bottom = { x: mx, y: y1 };   // 下边中点
+                        const left = { x: x0, y: my };     // 左边中点
+                        const right = { x: x1, y: my };    // 右边中点
+
+                        switch (idx) {
+                            case 1: addSeg(left.x, left.y, bottom.x, bottom.y); break;
+                            case 2: addSeg(bottom.x, bottom.y, right.x, right.y); break;
+                            case 3: addSeg(left.x, left.y, right.x, right.y); break;
+                            case 4: addSeg(top.x, top.y, right.x, right.y); break;
+                            case 5: addSeg(left.x, left.y, top.x, top.y); addSeg(bottom.x, bottom.y, right.x, right.y); break;
+                            case 6: addSeg(top.x, top.y, bottom.x, bottom.y); break;
+                            case 7: addSeg(left.x, left.y, top.x, top.y); break;
+                            case 8: addSeg(top.x, top.y, left.x, left.y); break;
+                            case 9: addSeg(top.x, top.y, bottom.x, bottom.y); break;
+                            case 10: addSeg(top.x, top.y, right.x, right.y); addSeg(left.x, left.y, bottom.x, bottom.y); break;
+                            case 11: addSeg(top.x, top.y, right.x, right.y); break;
+                            case 12: addSeg(left.x, left.y, right.x, right.y); break;
+                            case 13: addSeg(bottom.x, bottom.y, right.x, right.y); break;
+                            case 14: addSeg(left.x, left.y, bottom.x, bottom.y); break;
                         }
                     }
                 }
-                let boundaryEdges = allEdges.filter(e => !e.used);
-                if (boundaryEdges.length === 0) return [];
-                let rings = [];
-                let visited = new Set();
-                for (let startEdge of boundaryEdges) {
-                    if (visited.has(startEdge)) continue;
-                    let ring = [];
-                    let currentEdge = startEdge;
-                    ring.push(currentEdge.v1);
-                    let iter = 0;
-                    const maxIter = boundaryEdges.length * 2;
-                    while (iter < maxIter) {
-                        iter++;
-                        visited.add(currentEdge);
-                        const end = currentEdge.v2;
-                        ring.push(end);
-                        let found = null;
-                        for (let e of boundaryEdges) {
-                            if (visited.has(e)) continue;
-                            if (Math.hypot(e.v1.x - end.x, e.v1.y - end.y) < EPS) {
-                                found = e;
-                                break;
-                            }
-                            if (Math.hypot(e.v2.x - end.x, e.v2.y - end.y) < EPS) {
-                                let temp = e.v1;
-                                e.v1 = e.v2;
-                                e.v2 = temp;
-                                found = e;
-                                break;
-                            }
-                        }
-                        if (!found) break;
-                        currentEdge = found;
-                        if (currentEdge === startEdge) break;
-                    }
-                    let unique = [];
-                    for (let p of ring) {
-                        let dup = false;
-                        for (let u of unique)
-                            if (Math.hypot(u.x - p.x, u.y - p.y) < EPS) { dup = true; break; }
-                        if (!dup) unique.push(p);
-                    }
-                    if (unique.length >= 3) rings.push(unique);
+
+                // 从线段追踪闭合轮廓
+                const segs = Array.from(segMap.values());
+                if (segs.length === 0) return [];
+
+                // 构建邻接表
+                const vertMap = new Map();
+                function vKey(v) { return Math.round(v.x * 10) + ',' + Math.round(v.y * 10); }
+                for (let s of segs) {
+                    const k1 = vKey(s.v1), k2 = vKey(s.v2);
+                    if (!vertMap.has(k1)) vertMap.set(k1, { pt: s.v1, next: [] });
+                    if (!vertMap.has(k2)) vertMap.set(k2, { pt: s.v2, next: [] });
+                    vertMap.get(k1).next.push(k2);
+                    vertMap.get(k2).next.push(k1);
                 }
-                if (rings.length === 0) return [];
-                if (rings.length === 1) return rings[0];
-                rings.sort((a, b) => polygonArea(b) - polygonArea(a));
-                return rings[0];
+
+                // 找最左下的点开始追踪
+                let startK = null, sx = Infinity, sy = Infinity;
+                for (let [k, v] of vertMap) {
+                    if (v.pt.y < sy || (Math.abs(v.pt.y - sy) < 0.1 && v.pt.x < sx)) {
+                        sy = v.pt.y; sx = v.pt.x; startK = k;
+                    }
+                }
+
+                const used = new Set();
+                const ring = [];
+                let curK = startK;
+                let prevK = null;
+                let safety = segs.length * 2;
+                while (safety-- > 0) {
+                    const v = vertMap.get(curK);
+                    ring.push({ x: v.pt.x, y: v.pt.y });
+                    // 找下一个点
+                    let nextK = null;
+                    for (let nk of v.next) {
+                        if (nk === prevK) continue;
+                        if (used.has(curK + '|' + nk) || used.has(nk + '|' + curK)) continue;
+                        nextK = nk;
+                        break;
+                    }
+                    if (!nextK) break;
+                    used.add(curK + '|' + nextK);
+                    prevK = curK;
+                    curK = nextK;
+                    if (curK === startK) break;
+                }
+
+                if (ring.length < 3) return [];
+                return ring;
             }
 
             // ---------- 5. 随机拼接算法 ----------
             function generateRandomPuzzle() {
-                const MAX_ATTEMPTS = 10000;
+                const MAX_ATTEMPTS = 20000;
                 for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
                     const result = tryGenerate();
                     if (result) return result;
@@ -977,36 +1022,42 @@
                 const placed = {};
                 const placedIds = [];
                 const firstId = ids[0];
-                placed[firstId] = { x: 0, y: 0, rotate: 0, flip: 1 };
+                // 第一块随机旋转翻转，增加整体形状多样性
+                const rotations = [0, 45, 90, 135, 180, 225, 270, 315];
+                const firstRot = rotations[Math.floor(Math.random() * rotations.length)];
+                const firstFlip = Math.random() < 0.5 ? 1 : -1;
+                placed[firstId] = { x: 0, y: 0, rotate: firstRot, flip: firstFlip };
                 placedIds.push(firstId);
                 let success = true;
                 for (let idx = 1; idx < ids.length; idx++) {
                     const newId = ids[idx];
-                    let found = false;
+                    const candidates = [];
                     const shuffledPlaced = placedIds.slice();
                     shuffle(shuffledPlaced);
-                    for (let pid of shuffledPlaced) {
-                        if (found) break;
+                    for (const pid of shuffledPlaced) {
                         const pTrans = placed[pid];
                         const pVerts = getTransformedVerts(pid, pTrans);
                         const pEdges = PIECE_EDGES[pid];
                         const newEdges = PIECE_EDGES[newId];
-                        const shuffledNewEdges = newEdges.slice();
-                        shuffle(shuffledNewEdges);
-                        for (let ne of shuffledNewEdges) {
-                            if (found) break;
-                            const shuffledPEdges = pEdges.slice();
-                            shuffle(shuffledPEdges);
-                            for (let pe of shuffledPEdges) {
+                        for (const ne of newEdges) {
+                            for (const pe of pEdges) {
                                 if (Math.abs(ne.len - pe.len) > 0.5) continue;
-                                for (let dir of [1, -1]) {
+                                for (const dir of [1, -1]) {
                                     const p1 = pVerts[pe.index];
                                     const p2 = pVerts[(pe.index + 1) % pVerts.length];
                                     const nePts = PIECE_DEFS[newId].pts.split(' ').map(p => p.split(',').map(Number));
                                     const n1 = nePts[ne.index];
                                     const n2 = nePts[(ne.index + 1) % nePts.length];
-                                    const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.atan2(n2[1] - n1[1], n2[0] -
-                                    n1[0]) * dir;
+                                    const pAngle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                                    let nAngle;
+                                    if (dir === -1) {
+                                        const dx = n1[0] - n2[0];
+                                        const dy = n2[1] - n1[1];
+                                        nAngle = Math.atan2(dy, dx);
+                                    } else {
+                                        nAngle = Math.atan2(n2[1] - n1[1], n2[0] - n1[0]);
+                                    }
+                                    const angle = pAngle - nAngle;
                                     const flip = dir;
                                     const rad = angle;
                                     const cos = Math.cos(rad),
@@ -1037,16 +1088,20 @@
                                         }
                                     }
                                     if (!overlap) {
-                                        placed[newId] = newTrans;
-                                        placedIds.push(newId);
-                                        found = true;
-                                        break;
+                                        candidates.push(newTrans);
                                     }
                                 }
                             }
                         }
                     }
-                    if (!found) { success = false; break; }
+                    if (candidates.length > 0) {
+                        const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+                        placed[newId] = chosen;
+                        placedIds.push(newId);
+                    } else {
+                        success = false;
+                        break;
+                    }
                 }
                 if (!success) return null;
                 for (let i = 0; i < placedIds.length; i++) {
@@ -1663,12 +1718,7 @@
                 generateBtn.disabled = true;
                 setTimeout(() => {
                     try {
-                        let task;
-                        if (puzzleMode === 'library') {
-                            task = getNextLibraryPuzzle();
-                        } else {
-                            task = generateRandomPuzzle();
-                        }
+                        let task = generateRandomPuzzle();
                         if (task) {
                             loadTask(task);
                             if (isSkip && isExamMode && examActive) {
@@ -2220,21 +2270,6 @@ function fetchRankData() {
                 }
             });
 
-            const modeBtn = document.getElementById('modeBtn');
-            modeBtn.addEventListener('click', function() {
-                if (puzzleMode === 'random') {
-                    puzzleMode = 'library';
-                    modeBtn.textContent = '📚 题库模式';
-                    shuffleLibrary();
-                    toastMsg('已切换到题库模式（24道经典题)', 'info');
-                } else {
-                    puzzleMode = 'random';
-                    modeBtn.textContent = '🎲 随机模式';
-                    toastMsg('已切换到随机生成模式', 'info');
-                }
-                generateNewPuzzle(false);
-            });
-
             document.getElementById('startExamBtn').addEventListener('click', startExam);
             document.getElementById('closeModalBtn').addEventListener('click', function() {
                 document.getElementById('examModal').classList.remove('active');
@@ -2259,19 +2294,7 @@ function fetchRankData() {
                 }, 800);
             }
 
-            // 填充预设题库（24道经典造型）
-            (function fillPuzzles() {
-                const names = ['方方正正','小山坡','战斗机','宝塔','长桥','钻石','大风筝','飞镖','小方台','大方阵','小尖塔','扁舟','巨人','古塔','方尖碑','平行阵','钟楼','梯形台','火箭','城堡','小山丘','长矛','摩天楼','拱门'];
-                // 题库数据由生成脚本产出，24种不同轮廓
-                const puzzleData = [{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":400,"y":400},{"x":600,"y":600},{"x":800,"y":400},{"x":600,"y":200},{"x":300,"y":300},{"x":300,"y":500},{"x":200,"y":400},{"x":500,"y":100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":500,"y":300,"rotate":-90,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p2":{"x":400,"y":200,"rotate":180,"flip":1},"p4":{"x":0,"y":200,"rotate":180,"flip":1}}},{"outline":[{"x":800,"y":400},{"x":400,"y":400},{"x":600,"y":600}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":0,"flip":-1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":0,"y":200},{"x":-100,"y":100},{"x":100,"y":100},{"x":600,"y":200},{"x":400,"y":400},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":0,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":0,"y":200},{"x":-100,"y":100},{"x":100,"y":100},{"x":200,"y":600},{"x":400,"y":400},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":0,"flip":-1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p1":{"x":200,"y":200,"rotate":180,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":400,"y":200},{"x":400,"y":400},{"x":800,"y":400},{"x":600,"y":600},{"x":600,"y":200},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":400,"y":200},{"x":400,"y":400},{"x":800,"y":400},{"x":600,"y":600},{"x":200,"y":600},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":0},{"x":0,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p4":{"x":-300,"y":-100,"rotate":-180,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p1":{"x":200,"y":200,"rotate":180,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":400,"y":200},{"x":400,"y":400},{"x":600,"y":200},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1}}},{"outline":[{"x":400,"y":400},{"x":600,"y":600},{"x":800,"y":400},{"x":600,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p1":{"x":500,"y":300,"rotate":-90,"flip":-1},"p2":{"x":400,"y":200,"rotate":180,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1}}},{"outline":[{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":400,"y":200},{"x":300,"y":300},{"x":300,"y":500}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1}}},{"outline":[{"x":200,"y":200},{"x":300,"y":300},{"x":300,"y":500}],"solution":{"p5":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":-100,"y":100,"rotate":270,"flip":1},"p2":{"x":0,"y":400,"rotate":-90,"flip":1},"p1":{"x":100,"y":300,"rotate":0,"flip":1},"p6":{"x":300,"y":0,"rotate":360,"flip":-1},"p3":{"x":50,"y":250,"rotate":90,"flip":-1},"p4":{"x":200,"y":200,"rotate":-90,"flip":1}}},{"outline":[{"x":400,"y":400},{"x":200,"y":400},{"x":400,"y":600},{"x":0,"y":600},{"x":600,"y":400},{"x":400,"y":200},{"x":300,"y":300},{"x":300,"y":500}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p6":{"x":200,"y":0,"rotate":-90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":500,"y":500},{"x":700,"y":500},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p6":{"x":400,"y":100,"rotate":180,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":600,"y":200},{"x":400,"y":400},{"x":800,"y":400},{"x":600,"y":600},{"x":300,"y":500},{"x":300,"y":300},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p1":{"x":300,"y":100,"rotate":-270,"flip":1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":600,"y":400},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p6":{"x":400,"y":100,"rotate":180,"flip":-1}}},{"outline":[{"x":300,"y":500},{"x":300,"y":300},{"x":400,"y":200},{"x":600,"y":400},{"x":200,"y":400},{"x":400,"y":400}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":500,"y":100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p6":{"x":400,"y":100,"rotate":360,"flip":-1},"p4":{"x":300,"y":300,"rotate":90,"flip":1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1}}},{"outline":[{"x":200,"y":200},{"x":300,"y":300},{"x":300,"y":500},{"x":100,"y":700},{"x":100,"y":300}],"solution":{"p5":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":-100,"y":100,"rotate":270,"flip":1},"p2":{"x":0,"y":400,"rotate":-90,"flip":1},"p6":{"x":300,"y":0,"rotate":360,"flip":-1},"p3":{"x":50,"y":250,"rotate":90,"flip":-1},"p4":{"x":100,"y":100,"rotate":-180,"flip":1},"p1":{"x":0,"y":200,"rotate":-90,"flip":1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":600,"y":400},{"x":200,"y":400},{"x":400,"y":400},{"x":300,"y":500},{"x":300,"y":300},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p6":{"x":200,"y":0,"rotate":90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":200,"y":200},{"x":100,"y":100},{"x":-100,"y":100},{"x":0,"y":200},{"x":200,"y":600},{"x":400,"y":400},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-180,"flip":-1},"p2":{"x":400,"y":400,"rotate":0,"flip":-1},"p6":{"x":-100,"y":-200,"rotate":180,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":200,"y":200,"rotate":180,"flip":-1}}},{"outline":[{"x":200,"y":200},{"x":300,"y":300},{"x":200,"y":400},{"x":100,"y":300},{"x":100,"y":100}],"solution":{"p5":{"x":0,"y":0,"rotate":0,"flip":1},"p3":{"x":-150,"y":250,"rotate":270,"flip":1},"p7":{"x":100,"y":100,"rotate":180,"flip":-1},"p6":{"x":0,"y":-100,"rotate":90,"flip":1},"p4":{"x":-200,"y":200,"rotate":180,"flip":1},"p2":{"x":500,"y":500,"rotate":0,"flip":-1},"p1":{"x":400,"y":200,"rotate":-270,"flip":1}}},{"outline":[{"x":400,"y":400},{"x":300,"y":500},{"x":300,"y":300},{"x":400,"y":200}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p6":{"x":200,"y":0,"rotate":-90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p1":{"x":300,"y":100,"rotate":-90,"flip":1}}},{"outline":[{"x":400,"y":0},{"x":300,"y":100},{"x":400,"y":200},{"x":300,"y":300},{"x":300,"y":500},{"x":400,"y":400},{"x":200,"y":400},{"x":0,"y":600},{"x":200,"y":800},{"x":600,"y":400},{"x":500,"y":100},{"x":300,"y":-100},{"x":400,"y":-200},{"x":500,"y":-100}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p6":{"x":200,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p4":{"x":100,"y":-300,"rotate":270,"flip":-1},"p1":{"x":0,"y":400,"rotate":0,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1}}},{"outline":[{"x":300,"y":100},{"x":400,"y":200},{"x":400,"y":400},{"x":200,"y":400},{"x":400,"y":600},{"x":0,"y":600},{"x":600,"y":400},{"x":500,"y":100},{"x":400,"y":0},{"x":300,"y":-100},{"x":200,"y":0}],"solution":{"p3":{"x":0,"y":0,"rotate":0,"flip":1},"p4":{"x":0,"y":-200,"rotate":270,"flip":1},"p7":{"x":0,"y":0,"rotate":-90,"flip":-1},"p5":{"x":250,"y":-150,"rotate":-270,"flip":1},"p1":{"x":100,"y":300,"rotate":90,"flip":-1},"p2":{"x":200,"y":200,"rotate":-180,"flip":1},"p6":{"x":400,"y":-200,"rotate":270,"flip":-1}}}];
-                for (let i = 0; i < puzzleData.length; i++) {
-                    PRESET_PUZZLES.push({
-                        name: names[i] || ('第' + (i+1) + '题'),
-                        outline: puzzleData[i].outline,
-                        solution: puzzleData[i].solution
-                    });
-                }
-            })();
+
 
             // 初始化
             setTimeout(() => {

@@ -96,6 +96,7 @@ function shuffle(arr) {
 }
 
 function extractOutline(transforms) {
+    const EDGE_MATCH_EPS = 0.6;
     let allEdges = [];
     for (let id in transforms) {
         const verts = getTransformedVerts(id, transforms[id]);
@@ -111,7 +112,7 @@ function extractOutline(transforms) {
             const d2 = Math.hypot(e1.v2.x - e2.v2.x, e1.v2.y - e2.v2.y);
             const d3 = Math.hypot(e1.v1.x - e2.v2.x, e1.v1.y - e2.v2.y);
             const d4 = Math.hypot(e1.v2.x - e2.v1.x, e1.v2.y - e2.v1.y);
-            if ((d1 < EPS && d2 < EPS) || (d3 < EPS && d4 < EPS)) {
+            if ((d1 < EDGE_MATCH_EPS && d2 < EDGE_MATCH_EPS) || (d3 < EDGE_MATCH_EPS && d4 < EDGE_MATCH_EPS)) {
                 e1.used = true; e2.used = true;
             }
         }
@@ -135,8 +136,8 @@ function extractOutline(transforms) {
             let found = null;
             for (let e of boundaryEdges) {
                 if (visited.has(e)) continue;
-                if (Math.hypot(e.v1.x - end.x, e.v1.y - end.y) < EPS) { found = e; break; }
-                if (Math.hypot(e.v2.x - end.x, e.v2.y - end.y) < EPS) {
+                if (Math.hypot(e.v1.x - end.x, e.v1.y - end.y) < EDGE_MATCH_EPS) { found = e; break; }
+                if (Math.hypot(e.v2.x - end.x, e.v2.y - end.y) < EDGE_MATCH_EPS) {
                     let temp = e.v1; e.v1 = e.v2; e.v2 = temp; found = e; break;
                 }
             }
@@ -147,7 +148,7 @@ function extractOutline(transforms) {
         let unique = [];
         for (let p of ring) {
             let dup = false;
-            for (let u of unique) if (Math.hypot(u.x - p.x, u.y - p.y) < EPS) { dup = true; break; }
+            for (let u of unique) if (Math.hypot(u.x - p.x, u.y - p.y) < EDGE_MATCH_EPS) { dup = true; break; }
             if (!dup) unique.push(p);
         }
         if (unique.length >= 3) rings.push(unique);
@@ -192,7 +193,11 @@ function tryGenerate() {
                         const nePts = PIECE_DEFS[newId].pts.split(' ').map(p => p.split(',').map(Number));
                         const n1 = nePts[ne.index];
                         const n2 = nePts[(ne.index + 1) % nePts.length];
-                        const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) - Math.atan2(n2[1] - n1[1], n2[0] - n1[0]) * dir;
+                        const pAngle = Math.atan2(p2.y - p1.y, p2.x - p1.x);
+                                let nAngle = (dir === -1)
+                                    ? Math.atan2(n2[1] - n1[1], n1[0] - n2[0])
+                                    : Math.atan2(n2[1] - n1[1], n2[0] - n1[0]);
+                                const angle = pAngle - nAngle;
                         const flip = dir;
                         const rad = angle;
                         const cos = Math.cos(rad), sin = Math.sin(rad);
@@ -280,7 +285,7 @@ function outlineSignature(outline) {
 
 let attempts = 0;
 const target = 30;
-while (puzzles.length < target && attempts < 30000) {
+while (puzzles.length < target && attempts < 100000) {
     attempts++;
     const result = tryGenerate();
     if (!result) continue;
