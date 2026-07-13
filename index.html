@@ -619,7 +619,8 @@
     <!-- Modal -->
     <div class="modal-overlay" id="examModal">
         <div class="modal-box">
-            <h2>📝 答题模式</h2>
+            <h2>⏱️ 答题挑战</h2>
+            <p style="color:#666;font-size:14px;margin-bottom:12px;">答对3道题计时挑战，用时越短越好，可跳过难题</p>
             <label>班级</label>
             <select id="classSelect">
                 <option value="1">1班</option>
@@ -2016,12 +2017,22 @@
                 if (isExamMode && examActive) {
                     examCount++;
                     updateStats();
-                    if (autoTimer) clearTimeout(autoTimer);
-                    autoTimer = setTimeout(() => {
-                        generateNewPuzzle(false);
-                        autoTimer = null;
-                    }, 300);
-                    toastMsg(`✅ 拼合正确！+1 (共 ${examCount} 组)`, 'success');
+                    if (examCount >= 3) {
+                        // 3题全部答对，结束挑战
+                        toastMsg(`🎉 全部答对！用时 ${formatTime(examSeconds)}`, 'success');
+                        if (autoTimer) clearTimeout(autoTimer);
+                        autoTimer = setTimeout(() => {
+                            endExam();
+                            autoTimer = null;
+                        }, 1500);
+                    } else {
+                        if (autoTimer) clearTimeout(autoTimer);
+                        autoTimer = setTimeout(() => {
+                            generateNewPuzzle(false);
+                            autoTimer = null;
+                        }, 300);
+                        toastMsg(`✅ 拼合正确！${examCount}/3，用时 ${formatTime(examSeconds)}`, 'success');
+                    }
                 } else {
                     toastMsg("✅ 拼合正确：外轮廓与目标轮廓重合", "success");
                     if (autoTimer) clearTimeout(autoTimer);
@@ -2042,11 +2053,15 @@
             }
 
             // ---------- 13. 答题模式 ----------
+            function formatTime(secs) {
+                const m = Math.floor(secs / 60);
+                const s = secs % 60;
+                return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+
             function updateStats() {
-                const mins = Math.floor(examSeconds / 60);
-                const secs = examSeconds % 60;
-                timerDisplay.textContent = `⏱️ ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                countDisplay.textContent = `✅ ${examCount}`;
+                timerDisplay.textContent = `⏱️ ${formatTime(examSeconds)}`;
+                countDisplay.textContent = `✅ ${examCount}/3`;
             }
 
             // 获取白名单并缓存
@@ -2109,7 +2124,7 @@
                 examClass = classVal;
                 examName = nameVal;
                 examCount = 0;
-                examSeconds = 120;
+                examSeconds = 0;
                 examActive = true;
                 isExamMode = true;
                 updateStats();
@@ -2126,16 +2141,11 @@
 
                 if (examTimer) clearInterval(examTimer);
                 examTimer = setInterval(() => {
-                    examSeconds--;
+                    examSeconds++;
                     updateStats();
-                    if (examSeconds <= 0) {
-                        clearInterval(examTimer);
-                        examTimer = null;
-                        endExam();
-                    }
                 }, 1000);
                 generateNewPuzzle(false);
-                toastMsg('答题开始！拼成一组自动换新，点击"跳过"可换题', 'info');
+                toastMsg('挑战开始！答对3题越快越好，点击"跳过"可换题', 'info');
             }
 
             function endExam() {
@@ -2160,13 +2170,14 @@
                 examBtn.textContent = '📝 答题模式';
                 examBtn.classList.remove('active');
 
-                examSeconds = 120;
-                const msg = `⏰ 本轮游戏结束！您共拼成 ${examCount} 组！`;
-                toastMsg(msg, 'info');
-                if (examCount > 0) {
-                    sendData(examClass, examName, examCount);
+                const totalTime = examSeconds;
+                examSeconds = 0;
+                if (examCount >= 3) {
+                    const msg = `🎉 挑战完成！用时 ${formatTime(totalTime)}`;
+                    toastMsg(msg, 'success');
+                    sendData(examClass, examName, totalTime);
                 } else {
-                    toastMsg('本轮未拼成任何组，请继续加油！', 'info');
+                    toastMsg(`挑战已结束，答对 ${examCount} 题，用时 ${formatTime(totalTime)}`, 'info');
                 }
 
                 examCount = 0;
@@ -2237,7 +2248,7 @@ function fetchRankData() {
                         return dateStr.slice(0, 10) === today;
                     });
 
-                    // 按 班级+姓名 分组统计 score 总和
+                    // 按 班级+姓名 分组：取每人最好成绩（最小用时）
                     const countMap = new Map();
                     todaySubs.forEach(item => {
                         let cls = item.class || item.class_name || item.grade || item.classId || '';
@@ -2246,20 +2257,21 @@ function fetchRankData() {
                         cls = String(cls).replace(/班/g, '').trim();
                         const key = `${cls}|${name.trim()}`;
                         if (!whiteSet.has(key)) return;
+                        const time = parseInt(item.score) || 0;
+                        if (time <= 0) return;
                         if (!countMap.has(key)) {
                             countMap.set(key, { 
                                 class: cls, 
                                 name: name.trim(), 
-                                count: 0
+                                bestTime: time
                             });
+                        } else if (time < countMap.get(key).bestTime) {
+                            countMap.get(key).bestTime = time;
                         }
-                        // 累加 score（验证成功的拼图数量）
-                        const score = parseInt(item.score) || 0;
-                        countMap.get(key).count += score;
                     });
 
-                    // 按拼图数量降序排列
-                    const sorted = Array.from(countMap.values()).sort((a, b) => b.count - a.count);
+                    // 按用时升序排列（越少越好）
+                    const sorted = Array.from(countMap.values()).sort((a, b) => a.bestTime - b.bestTime);
 
                     // 渲染排行榜
                     renderRankList(sorted);
@@ -2291,7 +2303,7 @@ function fetchRankData() {
                                 <span class="rank-name">${item.name}</span>
                                 <span class="rank-class">${item.class}班</span>
                             </div>
-                            <span class="rank-score">${item.count} 组</span>
+                            <span class="rank-score">${formatTime(item.bestTime)}</span>
                         </div>
                     `;
                 });
