@@ -1076,14 +1076,7 @@
             // 多指手势状态
             let pinchStartDist = 0;
             let pinchStartScale = 1;
-            let pinchStartAngle = 0;
-            let pinchStartRotate = 0;
             let isPinching = false;
-            let isTwoFingerRotate = false;
-
-            // 长按旋转
-            let longPressTimer = null;
-            let longPressFired = false;
             let currentTask = null;
             let outlineSegments = [];
             const CLASSIC_SQUARE_SIZE = 400;
@@ -1275,38 +1268,15 @@
                 evt.stopPropagation();
                 let target = evt.currentTarget;
 
-                // 触摸事件：处理长按旋转 + 多指手势
-                if (evt.touches) {
-                    if (evt.touches.length === 1) {
-                        // 单指：准备拖拽 + 长按旋转
-                        longPressFired = false;
-                        clearTimeout(longPressTimer);
-                        longPressTimer = setTimeout(() => {
-                            if (isDragging) return; // 已经开始拖拽就不触发
-                            longPressFired = true;
-                            rotatePiece(target, 15);
-                            // 震动反馈
-                            if (navigator.vibrate) navigator.vibrate(15);
-                        }, 450);
-                    } else if (evt.touches.length >= 2 && activeElement === target) {
-                        // 双指落在同一选中块上：旋转该块
-                        clearTimeout(longPressTimer);
-                        isTwoFingerRotate = true;
-                        isPinching = false;
-                        isDragging = false;
-                        let t1 = getSVGPoint(evt.touches[0].clientX, evt.touches[0].clientY);
-                        let t2 = getSVGPoint(evt.touches[1].clientX, evt.touches[1].clientY);
-                        pinchStartAngle = Math.atan2(t2.y - t1.y, t2.x - t1.x);
-                        pinchStartRotate = transforms[target.id].rotate;
-                        return;
-                    }
-                } else {
-                    // 鼠标双击旋转
-                    let now = Date.now();
-                    if (now - lastClickTime < 280) { rotatePiece(target, 45);
-                        lastClickTime = 0; return; }
-                    lastClickTime = now;
+                // 双击旋转（45度），支持鼠标和触摸
+                let now = Date.now();
+                if (now - lastClickTime < 280) {
+                    rotatePiece(target, 45);
+                    if (navigator.vibrate) navigator.vibrate(10);
+                    lastClickTime = 0;
+                    return;
                 }
+                lastClickTime = now;
 
                 document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
                 target.querySelector('.piece').classList.add('selected');
@@ -1325,22 +1295,12 @@
             }
 
             function onDragMove(evt) {
-                // 双指手势：旋转选中块 或 缩放画布
+                // 双指缩放画布
                 if (evt.touches && evt.touches.length >= 2) {
                     evt.preventDefault();
                     let t1 = getSVGPoint(evt.touches[0].clientX, evt.touches[0].clientY);
                     let t2 = getSVGPoint(evt.touches[1].clientX, evt.touches[1].clientY);
                     let dist = Math.hypot(t2.x - t1.x, t2.y - t1.y);
-                    let angle = Math.atan2(t2.y - t1.y, t2.x - t1.x);
-
-                    if (isTwoFingerRotate && activeElement) {
-                        // 旋转选中的拼块
-                        let angleDiff = (angle - pinchStartAngle) * 180 / Math.PI;
-                        transforms[activeElement.id].rotate = pinchStartRotate + angleDiff;
-                        updateTransform(activeElement);
-                        return;
-                    }
-
                     if (!isPinching) {
                         isPinching = true;
                         pinchStartDist = dist;
@@ -1358,7 +1318,6 @@
                 }
 
                 if (!isDragging || !selectedGroup) return;
-                if (longPressFired) return; // 长按触发后本次拖拽取消
                 evt.preventDefault();
                 let local = getLocalPos(evt);
                 let snapped = applySmartSnap(selectedGroup, local.x - dragOffset.x, local.y - dragOffset.y);
@@ -1368,10 +1327,8 @@
             }
 
             function onDragEnd() {
-                clearTimeout(longPressTimer);
                 isDragging = false;
                 isPinching = false;
-                isTwoFingerRotate = false;
                 selectedGroup = null;
                 window.removeEventListener('mousemove', onDragMove);
                 window.removeEventListener('mouseup', onDragEnd);
@@ -2258,7 +2215,7 @@ function fetchRankData() {
             // 首次进入显示操作提示
             if (!localStorage.getItem('qiqiaoban_guided')) {
                 setTimeout(() => {
-                    toastMsg('👆 单指拖动 · 长按旋转 · 双指缩放画布', 'info');
+                    toastMsg('👆 单指拖动 · 双击旋转45° · 双指缩放画布', 'info');
                     localStorage.setItem('qiqiaoban_guided', '1');
                 }, 800);
             }
