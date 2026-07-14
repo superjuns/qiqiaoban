@@ -2158,7 +2158,7 @@
                 toastMsg('挑战开始！答对3题越快越好，点击"跳过"可换题', 'info');
             }
 
-            function endExam() {
+            function endExam(isManual = false) {
                 examActive = false;
                 isExamMode = false;
 
@@ -2182,12 +2182,12 @@
 
                 const totalTime = examSeconds;
                 examSeconds = 0;
-                if (examCount >= 3) {
+                if (!isManual && examCount >= 3) {
                     const msg = `🎉 挑战完成！用时 ${formatTime(totalTime)}`;
                     toastMsg(msg, 'success');
                     sendData(examClass, examName, totalTime);
                 } else {
-                    toastMsg(`挑战已结束，答对 ${examCount} 题，用时 ${formatTime(totalTime)}`, 'info');
+                    toastMsg(`挑战已结束，答对 ${examCount} 题`, 'info');
                 }
 
                 examCount = 0;
@@ -2341,7 +2341,7 @@ function fetchRankData() {
 
             examBtn.addEventListener('click', function() {
                 if (examActive) {
-                    endExam();
+                    endExam(true);
                 } else {
                     document.getElementById('examModal').classList.add('active');
                 }
