@@ -2095,6 +2095,16 @@
 
             // 开始答题（含白名单验证）
             async function startExam() {
+                // 自动填充：从 localStorage 读取登录信息
+                if (!nameInput.value) {
+                    const savedCls = localStorage.getItem('qiqiaoban_class');
+                    const savedName = localStorage.getItem('qiqiaoban_name');
+                    if (savedCls && savedName) {
+                        document.getElementById('classSelect').value = savedCls.replace('班', '');
+                        nameInput.value = savedName;
+                    }
+                }
+
                 const classVal = document.getElementById('classSelect').value;
                 const nameVal = document.getElementById('nameInput').value.trim();
                 if (!nameVal) {
@@ -2371,6 +2381,34 @@ function fetchRankData() {
             updateViewport();
             updateStats();
         })();
-    </script>
+    
+            // URL参数自动登录（平台跳转时免输入）
+            tryAutoLoginFromUrl();
+        </script>
 </body>
 </html>
+
+            // URL参数自动登录工具函数
+            function getUrlParam(name) {
+                return new URLSearchParams(window.location.search).get(name) || '';
+            }
+            function normStr(s) {
+                return String(s || '').replace(/班/g, '').replace(/\s/g, '').toLowerCase();
+            }
+            // URL参数自动登录（平台跳转时免输入）
+            async function tryAutoLoginFromUrl() {
+                const cls = getUrlParam('class') || getUrlParam('cls') || getUrlParam('班级');
+                const name = getUrlParam('name') || getUrlParam('姓名');
+                if (!cls || !name) return false;
+                const normCls = /^\d+$/.test(cls) ? cls + '班' : cls;
+                try {
+                    if (!whiteListLoaded) await fetchWhitelist();
+                    const allowed = whiteList.some(item => 
+                        normStr(item.class) === normStr(normCls) && normStr(item.name) === normStr(name)
+                    );
+                    if (!allowed) return false;
+                    localStorage.setItem('qiqiaoban_class', normCls);
+                    localStorage.setItem('qiqiaoban_name', name);
+                    return true;
+                } catch (e) { return false; }
+            }
