@@ -2100,7 +2100,7 @@
                     const savedCls = localStorage.getItem('qiqiaoban_class');
                     const savedName = localStorage.getItem('qiqiaoban_name');
                     if (savedCls && savedName) {
-                        document.getElementById('classSelect').value = savedCls.replace('班', '');
+                        document.getElementById('classSelect').value = savedCls.replace(/班/g, '');
                         nameInput.value = savedName;
                     }
                 }
@@ -2343,7 +2343,15 @@ function fetchRankData() {
                 if (examActive) {
                     endExam(true);
                 } else {
-                    document.getElementById('examModal').classList.add('active');
+                    const savedCls = localStorage.getItem('qiqiaoban_class');
+                    const savedName = localStorage.getItem('qiqiaoban_name');
+                    if (savedCls && savedName) {
+                        document.getElementById('classSelect').value = savedCls.replace(/班/g, '');
+                        document.getElementById('nameInput').value = savedName;
+                        startExam();
+                    } else {
+                        document.getElementById('examModal').classList.add('active');
+                    }
                 }
             });
 
@@ -2373,26 +2381,11 @@ function fetchRankData() {
 
 
 
-            // 初始化
-            setTimeout(() => {
-                generateNewPuzzle(false);
-                fetchRankData();
-            }, 100);
-            updateViewport();
-            updateStats();
-        })();
-    
-            // URL参数自动登录（平台跳转时免输入）
-            tryAutoLoginFromUrl();
-        </script>
-</body>
-</html>
-
             // URL参数自动登录工具函数
             function getUrlParam(name) {
                 return new URLSearchParams(window.location.search).get(name) || '';
             }
-            function normStr(s) {
+            function normStr2(s) {
                 return String(s || '').replace(/班/g, '').replace(/\s/g, '').toLowerCase();
             }
             // URL参数自动登录（平台跳转时免输入）
@@ -2400,15 +2393,27 @@ function fetchRankData() {
                 const cls = getUrlParam('class') || getUrlParam('cls') || getUrlParam('班级');
                 const name = getUrlParam('name') || getUrlParam('姓名');
                 if (!cls || !name) return false;
-                const normCls = /^\d+$/.test(cls) ? cls + '班' : cls;
+                const normCls = String(cls).replace(/班/g, '').trim();
                 try {
                     if (!whiteListLoaded) await fetchWhitelist();
-                    const allowed = whiteList.some(item => 
-                        normStr(item.class) === normStr(normCls) && normStr(item.name) === normStr(name)
-                    );
-                    if (!allowed) return false;
+                    const key = `${normCls}|${name.trim()}`;
+                    if (!whiteListSet.has(key)) return false;
                     localStorage.setItem('qiqiaoban_class', normCls);
-                    localStorage.setItem('qiqiaoban_name', name);
+                    localStorage.setItem('qiqiaoban_name', name.trim());
                     return true;
                 } catch (e) { return false; }
             }
+
+            // 初始化
+            setTimeout(() => {
+                generateNewPuzzle(false);
+                fetchRankData();
+                tryAutoLoginFromUrl().catch(() => {});
+            }, 100);
+            updateViewport();
+            updateStats();
+        })();
+    
+        </script>
+</body>
+</html>
