@@ -641,6 +641,23 @@
     <div id="toastMessage" class="toast"></div>
 
     <script>
+// === Supabase 配置（自动生成）===
+const SUPABASE_KEY = 'sb_publishable_EAfnJgOY7VsXPdZkEcrvBA_0qkNGlyD';
+const _origFetch = window.fetch;
+window.fetch = function(url, options) {
+    options = options || {};
+    var u = (typeof url === 'string') ? url : (url && url.url) || '';
+    if (u.indexOf('bjugehxenrvaqtodjkbc.supabase.co') !== -1) {
+        options.headers = Object.assign({}, options.headers || {}, {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json'
+        });
+    }
+    return _origFetch.call(this, url, options);
+};
+// === Supabase 配置结束 ===
+
         (function() {
             // ---------- 1. 七巧板积木定义 ----------
             const PIECE_DEFS = {
@@ -2066,7 +2083,7 @@
 
             // 获取白名单并缓存
             function fetchWhitelist() {
-                return fetch('https://wzkjgz.site/api/5tmbx2o6rg/all')
+                return fetch('https://bjugehxenrvaqtodjkbc.supabase.co/rest/v1/whitelist?select=*')
                     .then(r => r.json())
                     .catch(() => ({ submissions: [] }))
                     .then(whiteRes => {
@@ -2088,7 +2105,7 @@
 
             function extractData(res) {
                 if (Array.isArray(res)) return res;
-                if (res && res.submissions && Array.isArray(res.submissions)) return res.submissions;
+                if (res && res && Array.isArray(res)) return res;
                 if (res && res.data && Array.isArray(res.data)) return res.data;
                 return [];
             }
@@ -2203,7 +2220,7 @@
                     name: name,
                     score: score
                 };
-                fetch('https://wzkjgz.site/api/6frl7m3zlw', {
+                fetch('https://bjugehxenrvaqtodjkbc.supabase.co/rest/v1/scores_qiqiaoban', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -2230,8 +2247,8 @@
 function fetchRankData() {
                 rankList.innerHTML = '<div class="rank-loading">加载中...</div>';
                 Promise.all([
-                    fetch('https://wzkjgz.site/api/6frl7m3zlw/all').then(r => r.json()).catch(() => ({ submissions: [] })),
-                    fetch('https://wzkjgz.site/api/5tmbx2o6rg/all').then(r => r.json()).catch(() => ({ submissions: [] }))
+                    fetch('https://bjugehxenrvaqtodjkbc.supabase.co/rest/v1/scores_qiqiaoban?select=*').then(r => r.json()).catch(() => ({ submissions: [] })),
+                    fetch('https://bjugehxenrvaqtodjkbc.supabase.co/rest/v1/whitelist?select=*').then(r => r.json()).catch(() => ({ submissions: [] }))
                 ])
                 .then(([rankRes, whiteRes]) => {
                     const rankSubs = extractData(rankRes);
