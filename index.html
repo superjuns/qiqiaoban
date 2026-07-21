@@ -477,27 +477,30 @@
                 padding-top: 44px;
             }
             .float-controls {
-                padding: 4px 8px;
+                padding: 4px 6px;
                 gap: 4px;
                 bottom: calc(8px + env(safe-area-inset-bottom));
-                border-radius: 16px;
-                max-width: 96%;
-                flex-wrap: wrap;
+                border-radius: 24px;
+                flex-wrap: nowrap;
                 justify-content: center;
             }
+            .btn-text {
+                display: none;
+            }
             .btn {
-                padding: 6px 10px;
-                font-size: 12px;
-                border-radius: 16px;
+                padding: 0;
+                width: 38px;
+                height: 38px;
+                font-size: 18px;
+                border-radius: 50%;
                 box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                min-height: 34px;
-                line-height: 1.3;
-                font-weight: 600;
-                white-space: nowrap;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 flex: 0 0 auto;
             }
             .btn svg, .btn .emoji {
-                font-size: 16px;
+                font-size: 18px;
             }
             .zoom-panel {
                 right: 8px;
@@ -550,13 +553,13 @@
         }
         @media (max-width: 400px) {
             .btn {
-                padding: 2px 6px;
-                font-size: 9px;
-                min-height: 24px;
+                width: 32px;
+                height: 32px;
+                font-size: 15px;
             }
             .float-controls {
                 gap: 3px;
-                padding: 3px 6px;
+                padding: 3px 5px;
             }
             .rank-item .rank-name {
                 font-size: 11px;
@@ -595,14 +598,14 @@
             <div class="zoom-info" id="zoomLevel">100%</div>
 
             <div class="float-controls">
-                <button class="btn btn-outline" id="resetPosBtn">⟳ 重置</button>
-                <button class="btn btn-outline" id="rotateLeftBtn">↺ -45</button>
-                <button class="btn btn-outline" id="rotateRightBtn">↻ +45</button>
-                <button class="btn btn-outline" id="flipBtn">🪞 翻转</button>
-                <button class="btn btn-outline" id="hintBtn">💡 提示</button>
-                <button class="btn btn-success" id="submitBtn">📤 验证拼图</button>
-                <button class="btn btn-generate" id="generateBtn">🔄 更换</button>
-                <button class="btn btn-exam" id="examBtn">📝 答题模式</button>
+                <button class="btn btn-outline" id="resetPosBtn">⟳ <span class="btn-text">重置</span></button>
+                <button class="btn btn-outline" id="rotateLeftBtn">↺ <span class="btn-text">-45</span></button>
+                <button class="btn btn-outline" id="rotateRightBtn">↻ <span class="btn-text">+45</span></button>
+                <button class="btn btn-outline" id="flipBtn">🪞 <span class="btn-text">翻转</span></button>
+                <button class="btn btn-outline" id="hintBtn">💡 <span class="btn-text">提示</span></button>
+                <button class="btn btn-success" id="submitBtn">📤 <span class="btn-text">验证拼图</span></button>
+                <button class="btn btn-generate" id="generateBtn">🔄 <span class="btn-text">更换</span></button>
+                <button class="btn btn-exam" id="examBtn">📝 <span class="btn-text">答题模式</span></button>
             </div>
         </div>
 
@@ -2190,13 +2193,13 @@ window.fetch = function(url, options) {
                     autoTimer = null;
                 }
 
-                generateBtn.textContent = '🔄 更换';
+                generateBtn.textContent = '🔄 <span class="btn-text">更换</span>';
                 generateBtn.classList.remove('btn-skip');
                 generateBtn.classList.add('btn-generate');
                 generateBtn.style.opacity = '1';
                 generateBtn.style.pointerEvents = 'auto';
 
-                examBtn.textContent = '📝 答题模式';
+                examBtn.textContent = '📝 <span class="btn-text">答题模式</span>';
                 examBtn.classList.remove('active');
 
                 const totalTime = examSeconds;
