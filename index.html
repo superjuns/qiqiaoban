@@ -2223,7 +2223,8 @@ window.fetch = function(url, options) {
                 const payload = {
                     class: cls,
                     name: name,
-                    score: score
+                    score: score,
+                    submitted_at: new Date().toISOString()
                 };
                 fetch('https://bjugehxenrvaqtodjkbc.supabase.co/rest/v1/scores_qiqiaoban', {
                     method: 'POST',
