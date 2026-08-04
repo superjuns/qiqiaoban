@@ -578,7 +578,7 @@
         .header-stats span{background:#f2f2f7!important;color:var(--yiqi-ink)!important;border-radius:11px!important}
         .float-controls{background:rgba(255,255,255,.9)!important;border:1px solid #e5e5ea!important;border-radius:18px!important;box-shadow:0 10px 28px rgba(0,0,0,.1)!important;backdrop-filter:blur(18px)!important}
         .btn{border-radius:12px!important;background:#f2f2f7!important;color:var(--yiqi-ink)!important;box-shadow:none!important;transition:transform 120ms ease,background-color 120ms ease!important}
-        .btn:active{transform:scale(.96)!important}.btn-success{background:#fff!important;color:var(--yiqi-ink)!important;border:1px solid #d8d6ff!important}.btn-exam,.modal-box .btn-start{background:var(--yiqi-blue)!important;color:#fff!important;border:1px solid var(--yiqi-blue)!important;box-shadow:0 6px 16px rgba(0,122,255,.16)!important}.btn-exam.active{background:#fff1ef!important;color:#c9342a!important;border-color:#ffd0ca!important;box-shadow:none!important}.btn-generate{background:#edeaff!important;color:var(--yiqi-purple)!important}
+        .btn:active{transform:scale(.96)!important}.btn-success{background:#fff!important;color:var(--yiqi-ink)!important;border:1px solid #d8d6ff!important}.btn-exam,.modal-box .btn-start{background:var(--yiqi-blue)!important;color:#fff!important;border:1px solid var(--yiqi-blue)!important;box-shadow:0 6px 16px rgba(0,122,255,.16)!important}.btn-exam.active{background:#fff1ef!important;color:#c9342a!important;border-color:#ffd0ca!important;box-shadow:none!important}.btn-generate,.btn-skip{min-height:44px!important;background:#f2f2f7!important;color:var(--yiqi-ink)!important;border:1px solid transparent!important}
         .modal,.overlay{backdrop-filter:blur(4px)!important}
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition:none!important}}
     </style>
@@ -616,8 +616,8 @@
                 <button class="btn btn-outline" id="flipBtn">🪞 <span class="btn-text">翻转</span></button>
                 <button class="btn btn-outline" id="hintBtn">💡 <span class="btn-text">提示</span></button>
                 <button class="btn btn-success" id="submitBtn">📤 <span class="btn-text">验证拼图</span></button>
-                <button class="btn btn-generate" id="generateBtn">🔄 <span class="btn-text">更换</span></button>
-                <button class="btn btn-exam" id="examBtn">📝 <span class="btn-text">答题模式</span></button>
+                <button class="btn btn-generate" id="generateBtn"><span aria-hidden="true">↻</span> <span class="btn-text">换一题</span></button>
+                <button class="btn btn-exam" id="examBtn"><span aria-hidden="true">✎</span> <span class="btn-text">进入答题</span></button>
             </div>
         </div>
 
@@ -2174,13 +2174,13 @@ window.fetch = function(url, options) {
                 updateStats();
                 document.getElementById('examModal').classList.remove('active');
 
-                generateBtn.textContent = '⏭️ 跳过';
+                generateBtn.innerHTML = '<span aria-hidden="true">↻</span> <span class="btn-text">跳过</span>';
                 generateBtn.classList.remove('btn-generate');
                 generateBtn.classList.add('btn-skip');
                 generateBtn.style.opacity = '1';
                 generateBtn.style.pointerEvents = 'auto';
 
-                examBtn.textContent = '⏹️ 结束答题';
+                examBtn.innerHTML = '<span aria-hidden="true">■</span> <span class="btn-text">结束答题</span>';
                 examBtn.classList.add('active');
 
                 if (examTimer) clearInterval(examTimer);
@@ -2205,13 +2205,13 @@ window.fetch = function(url, options) {
                     autoTimer = null;
                 }
 
-                generateBtn.textContent = '🔄 <span class="btn-text">更换</span>';
+                generateBtn.innerHTML = '<span aria-hidden="true">↻</span> <span class="btn-text">换一题</span>';
                 generateBtn.classList.remove('btn-skip');
                 generateBtn.classList.add('btn-generate');
                 generateBtn.style.opacity = '1';
                 generateBtn.style.pointerEvents = 'auto';
 
-                examBtn.textContent = '📝 <span class="btn-text">答题模式</span>';
+                examBtn.innerHTML = '<span aria-hidden="true">✎</span> <span class="btn-text">进入答题</span>';
                 examBtn.classList.remove('active');
 
                 const totalTime = examSeconds;
