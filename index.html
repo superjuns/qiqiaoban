@@ -583,7 +583,7 @@
         @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;transition:none!important}}
     </style>
 </head>
-<body>
+<body data-yiqi-game="tangram" style="--yiqi-accent:#5e5ce6;--yiqi-accent-soft:#efefff">
     <div class="app">
         <div class="canvas-area" id="canvasArea">
             <div class="global-header">
@@ -609,15 +609,15 @@
             </div>
             <div class="zoom-info" id="zoomLevel">100%</div>
 
-            <div class="float-controls">
+            <div class="float-controls" data-yiqi-toolbar>
                 <button class="btn btn-outline" id="resetPosBtn">⟳ <span class="btn-text">重置</span></button>
                 <button class="btn btn-outline" id="rotateLeftBtn">↺ <span class="btn-text">-45</span></button>
                 <button class="btn btn-outline" id="rotateRightBtn">↻ <span class="btn-text">+45</span></button>
                 <button class="btn btn-outline" id="flipBtn">🪞 <span class="btn-text">翻转</span></button>
                 <button class="btn btn-outline" id="hintBtn">💡 <span class="btn-text">提示</span></button>
-                <button class="btn btn-success" id="submitBtn">📤 <span class="btn-text">验证拼图</span></button>
-                <button class="btn btn-generate" id="generateBtn"><span aria-hidden="true">↻</span> <span class="btn-text">换一题</span></button>
-                <button class="btn btn-exam" id="examBtn"><span aria-hidden="true">✎</span> <span class="btn-text">进入答题</span></button>
+                <button class="btn btn-success" id="submitBtn" data-yiqi-action="verify">📤 <span class="btn-text">验证拼图</span></button>
+                <button class="btn btn-generate" id="generateBtn" data-yiqi-action="secondary"><span aria-hidden="true">↻</span> <span class="btn-text">换一题</span></button>
+                <button class="btn btn-exam" id="examBtn" data-yiqi-action="answer"><span aria-hidden="true">✎</span> <span class="btn-text">进入答题</span></button>
             </div>
         </div>
 
@@ -650,7 +650,7 @@
             </select>
             <label>姓名</label>
             <input type="text" id="nameInput" placeholder="请输入您的姓名" maxlength="20">
-            <button class="btn-start" id="startExamBtn">开始答题</button>
+            <button class="btn-start" id="startExamBtn" data-yiqi-action="answer">开始答题</button>
             <button class="btn-close" id="closeModalBtn">取消</button>
         </div>
     </div>
@@ -2182,6 +2182,7 @@ window.fetch = function(url, options) {
 
                 examBtn.innerHTML = '<span aria-hidden="true">■</span> <span class="btn-text">结束答题</span>';
                 examBtn.classList.add('active');
+                examBtn.dataset.yiqiAction = 'danger';
 
                 if (examTimer) clearInterval(examTimer);
                 examTimer = setInterval(() => {
@@ -2213,6 +2214,7 @@ window.fetch = function(url, options) {
 
                 examBtn.innerHTML = '<span aria-hidden="true">✎</span> <span class="btn-text">进入答题</span>';
                 examBtn.classList.remove('active');
+                examBtn.dataset.yiqiAction = 'answer';
 
                 const totalTime = examSeconds;
                 examSeconds = 0;
