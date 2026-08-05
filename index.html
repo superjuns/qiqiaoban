@@ -236,6 +236,10 @@
             pointer-events: none;
             opacity: 0.75;
         }
+        #outlineLayer.yiqi-outline-success .piece-outline-exposed { animation:yiqi-outline-pulse 760ms cubic-bezier(.2,.8,.2,1) both; stroke:#34c759!important; stroke-width:8!important; }
+        #piecesGroup.yiqi-puzzle-success .piece { animation:yiqi-piece-settle 520ms cubic-bezier(.2,.8,.2,1) both; filter:drop-shadow(0 7px 12px rgba(52,199,89,.22)); }
+        @keyframes yiqi-outline-pulse { 0%{opacity:.45} 45%{opacity:1} 100%{opacity:.7} }
+        @keyframes yiqi-piece-settle { 0%{transform:scale(.97)} 55%{transform:scale(1.025)} 100%{transform:scale(1)} }
         .toast {
             position: fixed;
             top: 20px;
@@ -1240,6 +1244,7 @@ window.fetch = function(url, options) {
             let viewScale = 1,
                 viewTranslate = { x: 0, y: 0 };
             let lastClickTime = 0;
+            let hasSnapFeedback = false;
             const SNAP_THRESHOLD = 24;
 
             // 多指手势状态
@@ -1427,6 +1432,12 @@ window.fetch = function(url, options) {
                     snap = getOutlineSnapOffset(g, tx, ty);
                 }
                 if (snap) {
+                    if (!hasSnapFeedback) {
+                        hasSnapFeedback = true;
+                        if (navigator.vibrate) navigator.vibrate(7);
+                        g.classList.add('yiqi-snapped');
+                        setTimeout(() => g.classList.remove('yiqi-snapped'), 180);
+                    }
                     return { x: tx + snap.dx, y: ty + snap.dy };
                 }
                 return { x: tx, y: ty };
@@ -1457,6 +1468,7 @@ window.fetch = function(url, options) {
                 dragOffset.x = local.x - cur.x;
                 dragOffset.y = local.y - cur.y;
                 isDragging = true;
+                hasSnapFeedback = false;
                 window.addEventListener('mousemove', onDragMove);
                 window.addEventListener('mouseup', onDragEnd);
                 window.addEventListener('touchmove', onDragMove, { passive: false });
@@ -1497,6 +1509,7 @@ window.fetch = function(url, options) {
 
             function onDragEnd() {
                 isDragging = false;
+                hasSnapFeedback = false;
                 isPinching = false;
                 selectedGroup = null;
                 window.removeEventListener('mousemove', onDragMove);
@@ -2094,10 +2107,21 @@ window.fetch = function(url, options) {
                 }
 
                 // 验证成功
+                outlineLayer.classList.remove('yiqi-outline-success');
+                piecesGroup.classList.remove('yiqi-puzzle-success');
+                void outlineLayer.getBBox();
+                outlineLayer.classList.add('yiqi-outline-success');
+                piecesGroup.classList.add('yiqi-puzzle-success');
+                const feedback = window.__yiqiSdkBridge && window.__yiqiSdkBridge.feedback;
+                if (feedback) {
+                    feedback.correct({ task: currentTask && currentTask.name ? currentTask.name : 'tangram', elapsed: examSeconds });
+                    feedback.progress({ completed: isExamMode ? examCount + 1 : 1, total: isExamMode ? 3 : 1 });
+                }
                 if (isExamMode && examActive) {
                     examCount++;
                     updateStats();
                     if (examCount >= 3) {
+                        if (feedback) feedback.complete({ score:examCount, elapsed:examSeconds });
                         // 3题全部答对，结束挑战
                         toastMsg(`🎉 全部答对！用时 ${formatTime(examSeconds)}`, 'success');
                         if (autoTimer) clearTimeout(autoTimer);
