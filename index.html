@@ -1674,7 +1674,14 @@ window.fetch = function(url, options) {
                 return clampClassicOffset(candidates[0]);
             }
 
+            function clearPuzzleSuccessFeedback() {
+                outlineLayer.classList.remove('yiqi-outline-success');
+                piecesGroup.classList.remove('yiqi-puzzle-success');
+                piecesGroup.querySelectorAll('.yiqi-snapped').forEach(piece => piece.classList.remove('yiqi-snapped'));
+            }
+
             function resetPieces() {
+                clearPuzzleSuccessFeedback();
                 document.querySelectorAll('.piece').forEach(p => p.classList.remove('selected'));
                 activeElement = null;
                 selectedGroup = null;
@@ -1757,6 +1764,7 @@ window.fetch = function(url, options) {
 
             // ---------- 9. 加载任务 ----------
             function loadTask(task) {
+                clearPuzzleSuccessFeedback();
                 currentTask = task;
                 drawPieceOutlines(task);
                 // 重置提示状态
