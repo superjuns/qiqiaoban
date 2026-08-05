@@ -1996,6 +1996,30 @@ window.fetch = function(url, options) {
                 return area;
             }
 
+            function measureOutlineCoverage(outline, pieceVertices, step = 8) {
+                const xs = outline.map(point => point.x);
+                const ys = outline.map(point => point.y);
+                const minX = Math.min(...xs);
+                const maxX = Math.max(...xs);
+                const minY = Math.min(...ys);
+                const maxY = Math.max(...ys);
+                let targetSamples = 0;
+                let coveredSamples = 0;
+
+                for (let y = minY + step / 2; y < maxY; y += step) {
+                    for (let x = minX + step / 2; x < maxX; x += step) {
+                        const point = { x, y };
+                        if (!pointInPolygon(point, outline)) continue;
+                        targetSamples++;
+                        if (pieceVertices.some(vertices => pointInPolygon(point, vertices))) {
+                            coveredSamples++;
+                        }
+                    }
+                }
+
+                return targetSamples > 0 ? coveredSamples / targetSamples : 0;
+            }
+
             // ---------- 11. 提示功能 ----------
             let hintVisible = false;
 
@@ -2094,15 +2118,11 @@ window.fetch = function(url, options) {
                     return;
                 }
 
-                const currentEdges = getCurrentExposedEdges();
-                const boundaryCompare = compareBoundaryEdges(currentEdges, outlineSegments);
-                if (boundaryCompare.currentCount !== boundaryCompare.targetCount) {
-                    toastMsg(`❌ 轮廓边数量不一致：当前 ${boundaryCompare.currentCount} 条，目标 ${boundaryCompare.targetCount} 条`, "fail");
-                    return;
-                }
-                if (!boundaryCompare.ok) {
-                    const missingCount = boundaryCompare.unmatchedCurrent + boundaryCompare.unmatchedTarget;
-                    toastMsg(`❌ 边界不重合：有 ${missingCount} 条外露边无法匹配轮廓线`, "fail");
+                // 共线外边可能被不同拼块拆成不同数量的线段，不能用“线段条数完全相等”判定。
+                // 在已确认所有顶点位于目标内、拼块互不重叠后，直接检测目标轮廓的实际覆盖率。
+                const coverage = measureOutlineCoverage(outline, pieceVertices);
+                if (coverage < 0.965) {
+                    toastMsg(`❌ 轮廓尚未填满（当前约 ${Math.round(coverage * 100)}%）`, "fail");
                     return;
                 }
 
